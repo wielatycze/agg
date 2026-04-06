@@ -9,10 +9,29 @@ const GENEALOGY_CONFIG = {
   // ──────────────────────────────────────────────────────────
   // SECTIONS
   // Each section groups related sources into one display block.
-  // Supported section IDs (controls icon + colour accent):
-  //   revisions | births | marriages | deaths |
-  //   witness_birth | witness_marriage | other
+  //
+  // Per source:
+  //   sheet_id         — long ID from the sheet URL
+  //   tab              — exact tab name (case-sensitive)
+  //                      required even if gid is set — used
+  //                      for the CSV fetch URL
+  //   label            — human label shown on the page
+  //   gid              — numeric tab ID for deep-linking
+  //                      (from ...edit#gid=XXXXXXX in URL)
+  //                      set to null to disable row links
+  //   household_column — REVISIONS ONLY: column whose value
+  //                      groups household members; all rows
+  //                      with the same value are displayed
+  //                      when any member is matched.
+  //                      Must be null for all other sections.
+  //   roles            — { column, role } pairs; person is
+  //                      matched if their ID appears in ANY
+  //                      of these columns
+  //   display_columns  — ordered list of column headers to
+  //                      show; use "_role_" to insert a Role
+  //                      badge column
   // ──────────────────────────────────────────────────────────
+
   sections: [
 
     // ── REVISIONS ───────────────────────────────────────────
@@ -22,161 +41,158 @@ const GENEALOGY_CONFIG = {
       icon:  "📜",
       sources: [
 
-        // --------------------------------------------------
-        // Each source = one tab in one Google Sheet.
-        // Fields:
-        //   sheet_id        — the long ID from the sheet URL
-        //   tab             — exact tab name (case-sensitive)
-        //   label           — human label shown on the page
-        //
-        //   gid             — numeric tab ID for deep-linking.
-        //                      Find it in the URL when the tab
-        //                      is open: ...edit#gid=1234567890
-        //                      Set to null to disable row links.
-        //
-        //   household_column — column name whose value is used
-        //                      to find all household members.
-        //                      When a person is matched, ALL
-        //                      rows sharing the same value in
-        //                      this column are displayed.
-        //                      Set to null to show only the
-        //                      matched row(s).
-        //
-        //   roles           — array of { column, role } pairs.
-        //                      'column' is the column header
-        //                      in the sheet that holds person
-        //                      IDs. 'role' is a display label.
-        //                      A person is matched if their ID
-        //                      appears in ANY of these columns.
-        //
-        //   display_columns — ordered list of column headers
-        //                      to show in the table. Use the
-        //                      exact header as it appears in
-        //                      row 1 of the sheet. The special
-        //                      value "_role_" inserts a Role
-        //                      column showing which role
-        //                      matched.
-        // --------------------------------------------------
-
         {
-          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:      "1811 (НИАБ 333-9-201)",
-          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1811 год",
-          gid:      1765304438,              
+          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:              "1811 (НИАБ 333-9-201)",
+          label:            "Рэвізская сказка, маёнтак Вяляцічы, 1811 год",
+          gid:              1765304438,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
           ],
-          display_columns: ["тип",	"н.п.",	"№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
+          display_columns: ["тип", "н.п.", "№", "родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
         {
-          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:      "1816 (НИАБ 333-9-83)",
-          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1816 год",
-          gid:      1330631543,
+          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:              "1816 (НИАБ 333-9-83)",
+          label:            "Рэвізская сказка, маёнтак Вяляцічы, 1816 год",
+          gid:              1330631543,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
           ],
-          display_columns: ["тип",	"н.п.",	"№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
+          display_columns: ["тип", "н.п.", "№", "родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
         {
-          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:      "1834 (НИАБ 333-9-542)",
-          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1834 год",
-          gid:      1743797303,
+          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:              "1834 (НИАБ 333-9-542)",
+          label:            "Рэвізская сказка, маёнтак Вяляцічы, 1834 год",
+          gid:              1743797303,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
           ],
-          display_columns: ["тип",	"н.п.",	"№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
+          display_columns: ["тип", "н.п.", "№", "родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
         {
-          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:      "1850 (НИАБ 333-9-408)",
-          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1850 год",
-          gid:      1936198662,
+          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:              "1850 (НИАБ 333-9-408)",
+          label:            "Рэвізская сказка, маёнтак Вяляцічы, 1850 год",
+          gid:              1936198662,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
           ],
-          display_columns: ["тип",	"н.п.",	"№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
+          display_columns: ["тип", "н.п.", "№", "родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
         {
-          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:      "1858 (НИАБ 333-9-1090)",
-          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1858 год",
-          gid:      2074719809,
+          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:              "1858 (НИАБ 333-9-1090)",
+          label:            "Рэвізская сказка, маёнтак Вяляцічы, 1858 год",
+          gid:              2074719809,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
           ],
-          display_columns: ["тип",	"н.п.",	"№ пред.", "№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
+          display_columns: ["тип", "н.п.", "№ пред.", "№", "родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         }
 
       ]
     },
 
-    // ── BIRTHS ──────────────────────────────────────────────
+    // ── BIRTH RECORD (the person themselves) ────────────────
     {
       id:    "births",
-      label: "Метрычныя кнігі - нараджэнне",
+      label: "Метрычныя кнігі — нараджэнне",
       icon:  "🕯",
       sources: [
 
         {
-          sheet_id: "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:      "Р/Велятичи ун",
-          label:    "Вяляцічы, уніацкая царква",
-          gid:      572746856,
+          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:              "Р/Велятичи ун",
+          label:            "Вяляцічы, уніацкая царква",
+          gid:              572746856,
           household_column: null,
           roles: [
-            { column: "#ребенка",  role: "Child" },
-            { column: "#отца",     role: "Father" },
-            { column: "#матери",    role: "Mother" }
+            { column: "#ребенка", role: "Child" }
           ],
-          display_columns: ["год", "день рождения",	"месяц рождения", "день крещения", "месяц крещения",	"имя ребенка",	"имя отца", "имя матери",	"фамилия",	"н. п.", 	"крестный 1",	"крестный 2"]
+          display_columns: ["год", "день рождения", "месяц рождения", "день крещения", "месяц крещения", "имя ребенка", "имя отца", "имя матери", "фамилия", "н. п.", "крестный 1", "крестный 2"]
         },
-         {
-          sheet_id: "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:      "Р/Велятичи пр",
-          label:    "Вяляцічы, праваслаўная царква",
-          gid:      0,
+
+        {
+          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:              "Р/Велятичи пр",
+          label:            "Вяляцічы, праваслаўная царква",
+          gid:              0,
           household_column: null,
           roles: [
-            { column: "#ребенка",  role: "Child" },
-            { column: "#отца",     role: "Father" },
-            { column: "#матери",    role: "Mother" }
+            { column: "#ребенка", role: "Child" }
           ],
-          display_columns: ["год", "№", "день рождения",	"месяц рождения", "день крещения", "месяц крещения",	"имя ребенка",	"имя отца", "отчество отца", "имя матери",	
-                            "отчество отца", "фамилия",	"восприемник",	"восприемница"]
+          display_columns: ["год", "№", "день рождения", "месяц рождения", "день крещения", "месяц крещения", "имя ребенка", "имя отца", "отчество отца", "имя матери", "отчество матери", "фамилия", "восприемник", "восприемница"]
         }
+
       ]
     },
 
     // ── MARRIAGES ───────────────────────────────────────────
     {
       id:    "marriages",
-      label: "Метрычныя кнігі - шлюбы",
+      label: "Метрычныя кнігі — шлюбы",
       icon:  "💍",
       sources: [
 
         {
-          sheet_id: "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:      "Б/Велятичи ун",
-          label:    "Вяляцічы, уніацкая царква",
-          gid:      null,
+          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:              "Б/Велятичи ун",
+          label:            "Вяляцічы, уніацкая царква",
+          gid:              null,
           household_column: null,
           roles: [
-            { column: "#жениха",   role: "Groom" },
-            { column: "#невесты",   role: "Bride" }
-
+            { column: "#жениха",  role: "Groom" },
+            { column: "#невесты", role: "Bride" }
           ],
-          display_columns: ["год", "№", "dd", "mm", "parafia", "1", "2", "3", "4", "5", "6", "7", "8"]
+          display_columns: ["год", "№", "dd", "mm", "parafia", "1", "2", "3", "4", "5", "6", "7", "8", "_role_"]
+        }
+
+        // Add more marriage sources here…
+      ]
+    },
+
+    // ── CHILDREN — BIRTH RECORDS ─────────────────────────────
+    {
+      id:    "children_births",
+      label: "Дзеці — метрычныя кнігі нараджэння",
+      icon:  "👶",
+      sources: [
+
+        {
+          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:              "Р/Велятичи ун",
+          label:            "Вяляцічы, уніацкая царква",
+          gid:              572746856,
+          household_column: null,
+          roles: [
+            { column: "#отца",   role: "Father" },
+            { column: "#матери", role: "Mother" }
+          ],
+          display_columns: ["год", "день рождения", "месяц рождения", "день крещения", "месяц крещения", "имя ребенка", "имя отца", "имя матери", "фамилия", "н. п.", "крестный 1", "крестный 2", "_role_"]
+        },
+
+        {
+          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:              "Р/Велятичи пр",
+          label:            "Вяляцічы, праваслаўная царква",
+          gid:              0,
+          household_column: null,
+          roles: [
+            { column: "#отца",   role: "Father" },
+            { column: "#матери", role: "Mother" }
+          ],
+          display_columns: ["год", "№", "день рождения", "месяц рождения", "день крещения", "месяц крещения", "имя ребенка", "имя отца", "отчество отца", "имя матери", "отчество матери", "фамилия", "восприемник", "восприемница", "_role_"]
         }
 
       ]
@@ -185,70 +201,59 @@ const GENEALOGY_CONFIG = {
     // ── DEATHS ──────────────────────────────────────────────
     {
       id:    "deaths",
-      label: "Deaths (Метрики — смерть)",
+      label: "Метрычныя кнігі — смерць",
       icon:  "✝",
       sources: [
-
-        {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "Deaths_ParishA",
-          label:    "Parish A — Deaths",
-          gid:      null,
-          household_column: null,
-          roles: [
-            { column: "id_osoby",  role: "Deceased" },
-            { column: "id_ojca",   role: "Father" },
-            { column: "id_matki",  role: "Mother" }
-          ],
-          display_columns: ["rok", "data", "imie", "nazwisko", "wiek", "przyczyna", "parafia", "_role_"]
-        }
-
+        // Add death record sources here when available
       ]
     },
 
-    // ── WITNESS AT BIRTH ────────────────────────────────────
+    // ── WITNESS AT BIRTHS ────────────────────────────────────
     {
       id:    "witness_birth",
-      label: "Witness at Births",
+      label: "Сведкі — нараджэнне",
       icon:  "👁",
       sources: [
 
         {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "Births_ParishA",
-          label:    "Parish A — Births",
-          gid:      null,
+          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:              "Р/Велятичи ун",
+          label:            "Вяляцічы, уніацкая царква",
+          gid:              572746856,
           household_column: null,
           roles: [
-            { column: "id_swiadka1", role: "Witness 1" },
-            { column: "id_swiadka2", role: "Witness 2" }
+            { column: "#крестный 1", role: "Witness 1" },
+            { column: "#крестный 2", role: "Witness 2" }
           ],
-          display_columns: ["rok", "data", "imie_dziecka", "ojciec", "matka", "parafia", "_role_"]
+          display_columns: ["год", "день рождения", "месяц рождения", "имя ребенка", "имя отца", "имя матери", "фамилия", "н. п.", "крестный 1", "крестный 2"]
         }
 
+        // Р/Велятичи пр: add when godparent ID column names are known
       ]
     },
 
-    // ── WITNESS AT MARRIAGE ─────────────────────────────────
+    // ── WITNESS AT MARRIAGES ─────────────────────────────────
     {
       id:    "witness_marriage",
-      label: "Witness at Marriages",
+      label: "Сведкі — шлюбы",
       icon:  "👁",
       sources: [
 
         {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "Marriages_ParishA",
-          label:    "Parish A — Marriages",
-          gid:      null,
+          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:              "Б/Велятичи ун",
+          label:            "Вяляцічы, уніацкая царква",
+          gid:              null,
           household_column: null,
           roles: [
-            { column: "id_swiadka1", role: "Witness 1" },
-            { column: "id_swiadka2", role: "Witness 2" }
+            { column: "#свидетель1", role: "Witness 1" },
+            { column: "#свидетель2", role: "Witness 1" },
+            { column: "#свидетель3", role: "Witness 1" }
           ],
-          display_columns: ["rok", "data", "pan_mlody", "panna_mloda", "parafia", "_role_"]
+          display_columns: ["год", "№", "dd", "mm", "1", "2", "3", "4", "5", "6", "7", "8"]
         }
 
+        // Add more marriage witness sources here…
       ]
     }
 
