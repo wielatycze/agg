@@ -124,22 +124,22 @@ const GENEALOGY_CONFIG = {
     // ── BIRTHS ──────────────────────────────────────────────
     {
       id:    "births",
-      label: "Births (Метрики — рождение)",
+      label: "Метрычныя кнігі - аб нараджэннях",
       icon:  "🕯",
       sources: [
 
         {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "Births_ParishA",
-          label:    "Parish A — Births",
-          gid:      null,
+          sheet_id: "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:      "Р/Велятичи ун",
+          label:    "Вяляцічы, уніацкая царква",
+          gid:      572746856,
           household_column: null,
           roles: [
-            { column: "id_dziecka",  role: "Child" },
-            { column: "id_ojca",     role: "Father" },
-            { column: "id_matki",    role: "Mother" }
+            { column: "#ребенка",  role: "Child" },
+            { column: "#отца",     role: "Father" },
+            { column: "#матери",    role: "Mother" }
           ],
-          display_columns: ["rok", "data", "imie_dziecka", "ojciec", "matka", "parafia", "_role_"]
+          display_columns: ["год", "день рождения",	"месяц рождения", "день крещения", "месяц крещения",	"имя ребенка",	"имя отца", "имя матери",	"фамилия",	"н. п.", 	"крестный 1",	"крестный 2"]
         }
 
         // Add more birth sources here…
