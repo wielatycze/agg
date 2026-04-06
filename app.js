@@ -76,7 +76,13 @@ function formatDisplayValue(row, colSpec) {
   if (isDisplayColumnObject(colSpec)) {
     const values = colSpec.columns
       .map(column => row[column] ?? '')
-      .filter(value => value !== '');
+      .filter(value => value !== '')
+      .map(value => {
+        if (colSpec.format === 'date' && /^[0-9]+$/.test(value)) {
+          return value.padStart(2, '0');
+        }
+        return value;
+      });
     return values.length === 0 ? '' : values.join(colSpec.join ?? ' ');
   }
   return '';
@@ -200,7 +206,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
         const sepRow = tbody.insertRow();
         sepRow.className = 'household-gap';
         const td = sepRow.insertCell();
-        td.colSpan = dataCols.length + extraColCount;
+        td.colSpan = displayCols.length + extraColCount;
       }
       prevHouseholdVal = hVal;
     }
