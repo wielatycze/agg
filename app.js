@@ -67,6 +67,26 @@ function normaliseId(val) {
   return String(val ?? '').trim();
 }
 
+function resolveSourceSheetTab(source, config) {
+  let sheetId = source.sheet_id;
+  let tab = source.tab;
+  let gid = source.gid;
+
+  let tabRef = config.tabs?.[source.tab];
+  if (!tabRef && config.tabs) {
+    tabRef = Object.values(config.tabs).find(ref => ref.tab === source.tab);
+  }
+  if (tabRef) {
+    sheetId = config.sheets?.[tabRef.sheet] ?? tabRef.sheet_id ?? sheetId;
+    tab = tabRef.tab ?? tab;
+    gid = tabRef.gid ?? gid;
+  } else if (source.sheet && !sheetId) {
+    sheetId = config.sheets?.[source.sheet] ?? sheetId;
+  }
+
+  return { sheetId, tab, gid };
+}
+
 function isDisplayColumnObject(col) {
   return typeof col === 'object' && col !== null && Array.isArray(col.columns);
 }
@@ -145,10 +165,11 @@ function matchSource(source, allRows, targetId) {
  * rowIdx is 0-based index into allRows (excluding header).
  * Sheet row = rowIdx + 2 (1 for header row, 1 for 1-based).
  */
-function sheetRowUrl(source, rowIdx) {
-  if (!source.gid) return null;
+function sheetRowUrl(source, rowIdx, config) {
+  const { sheetId, gid } = resolveSourceSheetTab(source, config);
+  if (!sheetId || !gid) return null;
   const sheetRow = rowIdx + 2; // +1 header, +1 for 1-based
-  return `https://docs.google.com/spreadsheets/d/${source.sheet_id}/edit#gid=${source.gid}&range=A${sheetRow}`;
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/edit#gid=${gid}&range=A${sheetRow}`;
 }
 
 function makeLinkIcon(url) {
@@ -162,11 +183,11 @@ function makeLinkIcon(url) {
   return a;
 }
 
-function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) {
+function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config) {
   const displayCols = source.display_columns.filter(c => c !== '_role_');
   const householdCols = source.household_columns || [];
   const showRole = source.display_columns.includes('_role_');
-  const hasGid   = !!source.gid;
+  const hasGid   = !!resolveSourceSheetTab(source, config).gid;
   const isHousehold = !!source.household_column;
 
   const wrap = document.createElement('div');
@@ -174,7 +195,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
 
   if (!isHousehold) {
     // Non-household: single table
-    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, true);
+    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, true, config);
     wrap.appendChild(table);
     return wrap;
   }
@@ -203,7 +224,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
         infoP.className = 'household-info';
         infoP.textContent = infoText;
         if (hasGid) {
-          const url = sheetRowUrl(source, firstRowIdx);
+          const url = sheetRowUrl(source, firstRowIdx, config);
           if (url) {
             const link = makeLinkIcon(url);
             infoP.appendChild(link);
@@ -214,7 +235,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
     }
 
     // Person table
-    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, false);
+    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, false, config);
     householdDiv.appendChild(table);
 
     wrap.appendChild(householdDiv);
@@ -223,10 +244,10 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
   return wrap;
 }
 
-function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true) {
+function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config) {
   const displayCols = source.display_columns.filter(c => c !== '_role_');
   const showRole = source.display_columns.includes('_role_');
-  const hasGid   = !!source.gid && hasLink;
+  const hasGid   = !!resolveSourceSheetTab(source, config).gid && hasLink;
 
   const table = document.createElement('table');
   table.className = 'record-table';
@@ -264,7 +285,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     if (hasGid) {
       const td = tr.insertCell();
       td.className = 'col-link';
-      const url = sheetRowUrl(source, rowIdx);
+      const url = sheetRowUrl(source, rowIdx, config);
       if (url) td.appendChild(makeLinkIcon(url));
     }
 
@@ -289,7 +310,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   return table;
 }
 
-function renderSection(section, results) {
+function renderSection(section, results, config) {
   const hasAny = results.some(r => r !== null);
 
   const div = document.createElement('div');
@@ -337,7 +358,7 @@ function renderSection(section, results) {
     group.appendChild(label);
 
     const { displayIndices, matchedSet, matchedRoles, allRows } = result;
-    const table = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles);
+    const table = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config);
     group.appendChild(table);
 
     div.appendChild(group);
@@ -378,7 +399,7 @@ async function runSearch(personId) {
   const resultsBody = document.getElementById('results-body');
   resultsBody.innerHTML = '';
 
-  // Fetch all tabs (deduplicated by sheetId+tab)
+  // Fetch all tabs (deduplicated by sheetId+gid)
   const fetchCache = {}; // key -> promise -> rows
 
   const allSectionResults = [];
@@ -387,9 +408,10 @@ async function runSearch(personId) {
     const sectionResults = [];
 
     for (const source of section.sources) {
-      const cacheKey = `${source.sheet_id}::${source.tab}`;
+      const { sheetId, gid } = resolveSourceSheetTab(source, config);
+      const cacheKey = `${sheetId}::${gid}`;
       if (!fetchCache[cacheKey]) {
-        fetchCache[cacheKey] = fetchSheetTab(source.sheet_id, source.gid)
+        fetchCache[cacheKey] = fetchSheetTab(sheetId, gid)
           .catch(err => { console.warn(`Error fetching ${cacheKey}:`, err); return []; });
       }
     }
@@ -403,7 +425,8 @@ async function runSearch(personId) {
 
   for (const { section, sectionResults, sources } of allSectionResults) {
     for (const source of sources) {
-      const cacheKey = `${source.sheet_id}::${source.tab}`;
+      const { sheetId, gid } = resolveSourceSheetTab(source, config);
+      const cacheKey = `${sheetId}::${gid}`;
       const allRows = await fetchCache[cacheKey];
       done++;
       setLoading(`Searching… (${done} / ${totalSources} sources)`);
@@ -439,7 +462,7 @@ async function runSearch(personId) {
     pill.textContent = `${section.icon} ${section.label}`;
     summaryEl.appendChild(pill);
 
-    const sectionEl = renderSection(section, sectionResults);
+    const sectionEl = renderSection(section, sectionResults, config);
     resultsBody.appendChild(sectionEl);
   }
 

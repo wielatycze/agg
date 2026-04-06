@@ -6,15 +6,30 @@
 
 const GENEALOGY_CONFIG = {
 
+  sheets: {
+    revisions: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+    churchRecords: "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY"
+  },
+
+  tabs: {
+    revision1811: { sheet: "revisions", gid: 1765304438 },
+    revision1816: { sheet: "revisions", gid: 1330631543 },
+    revision1834: { sheet: "revisions", gid: 1743797303 },
+    revision1850: { sheet: "revisions", gid: 1936198662 },
+    revision1858: { sheet: "revisions", gid: 2074719809 },
+    birthUn:      { sheet: "churchRecords", gid: 572746856 },
+    birthPr:      { sheet: "churchRecords", gid: 0 },
+    marriageUn:   { sheet: "churchRecords", gid: 1045153146 }
+  },
+
   // ──────────────────────────────────────────────────────────
   // SECTIONS
   // Each section groups related sources into one display block.
   //
   // Per source:
-  //   sheet_id         — long ID from the sheet URL
-  //   tab              — exact tab name (case-sensitive)
-  //                      required even if gid is set — used
-  //                      for the CSV fetch URL
+  //   sheet_id         — long ID from the sheet URL (legacy; optional when using config.tabs)
+  //   tab              — tab key defined in config.tabs, or the exact tab name for legacy support
+  //                      not required when gid is provided, because gid is enough for fetching.
   //   label            — human label shown on the page
   //   gid              — numeric tab ID for deep-linking
   //                      (from ...edit#gid=XXXXXXX in URL)
@@ -49,10 +64,8 @@ const GENEALOGY_CONFIG = {
       sources: [
 
         {
-          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:              "1811 (НИАБ 333-9-201)",
+          tab:              "revision1811",
           label:            "Рэвізская сказка, маёнтак Вяляцічы, 1811 год",
-          gid:              1765304438,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
@@ -62,10 +75,8 @@ const GENEALOGY_CONFIG = {
         },
 
         {
-          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:              "1816 (НИАБ 333-9-83)",
+          tab:              "revision1816",
           label:            "Рэвізская сказка, маёнтак Вяляцічы, 1816 год",
-          gid:              1330631543,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
@@ -75,10 +86,8 @@ const GENEALOGY_CONFIG = {
         },
 
         {
-          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:              "1834 (НИАБ 333-9-542)",
+          tab:              "revision1834",
           label:            "Рэвізская сказка, маёнтак Вяляцічы, 1834 год",
-          gid:              1743797303,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
@@ -88,10 +97,8 @@ const GENEALOGY_CONFIG = {
         },
 
         {
-          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:              "1850 (НИАБ 333-9-408)",
+          tab:              "revision1850",
           label:            "Рэвізская сказка, маёнтак Вяляцічы, 1850 год",
-          gid:              1936198662,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
@@ -101,10 +108,8 @@ const GENEALOGY_CONFIG = {
         },
 
         {
-          sheet_id:         "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
-          tab:              "1858 (НИАБ 333-9-1090)",
+          tab:              "revision1858",
           label:            "Рэвізская сказка, маёнтак Вяляцічы, 1858 год",
-          gid:              2074719809,
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
@@ -124,10 +129,8 @@ const GENEALOGY_CONFIG = {
       sources: [
 
         {
-          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:              "Р/Велятичи ун",
+          tab:              "birthUn",
           label:            "Вяляцічы, уніацкая царква",
-          gid:              572746856,
           household_column: null,
           roles: [
             { column: "#ребенка", role: "Child" }
@@ -146,10 +149,8 @@ const GENEALOGY_CONFIG = {
         },
 
         {
-          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:              "Р/Велятичи пр",
+          tab:              "birthPr",
           label:            "Вяляцічы, праваслаўная царква",
-          gid:              0,
           household_column: null,
           roles: [
             { column: "#ребенка", role: "Child" }
@@ -179,10 +180,8 @@ const GENEALOGY_CONFIG = {
       sources: [
 
         {
-          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:              "Б/Велятичи ун",
+          tab:              "marriageUn",
           label:            "Вяляцічы, уніацкая царква",
-          gid:              1045153146,
           household_column: null,
           roles: [
             { column: "#жениха",  role: "Groom" },
@@ -202,10 +201,8 @@ const GENEALOGY_CONFIG = {
       sources: [
 
         {
-          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:              "Р/Велятичи ун",
+          tab:              "birthUn",
           label:            "Вяляцічы, уніацкая царква",
-          gid:              572746856,
           household_column: null,
           roles: [
             { column: "#отца",   role: "Father" },
@@ -225,10 +222,8 @@ const GENEALOGY_CONFIG = {
           ]        },
 
         {
-          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:              "Р/Велятичи пр",
+          tab:              "birthPr",
           label:            "Вяляцічы, праваслаўная царква",
-          gid:              0,
           household_column: null,
           roles: [
             { column: "#отца",   role: "Father" },
@@ -268,10 +263,8 @@ const GENEALOGY_CONFIG = {
       sources: [
 
         {
-          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:              "Р/Велятичи ун",
+          tab:              "birthUn",
           label:            "Вяляцічы, уніацкая царква",
-          gid:              572746856,
           household_column: null,
           roles: [
             { column: "#крестный 1", role: "Witness 1" },
