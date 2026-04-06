@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Genealogy Record Finder</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="header-ornament">✦</div>
+      <h1>Genealogy Record Finder</h1>
+      <p class="subtitle">Search across revisions, metrical books, and parish lists</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="search-section">
+      <div class="search-box">
+        <label for="person-id">Person ID</label>
+        <div class="input-row">
+          <input type="number" id="person-id" placeholder="e.g. 1234" min="1" />
+          <button id="search-btn">Search</button>
+        </div>
+        <p class="search-hint">Enter a unique person ID to retrieve all records across all sources.</p>
+      </div>
+    </section>
+
+    <section id="results" class="results-section hidden">
+      <div class="results-header">
+        <h2>Records for person <span id="results-id"></span></h2>
+        <div id="results-summary" class="results-summary"></div>
+      </div>
+      <div id="results-body"></div>
+    </section>
+
+    <section id="error-section" class="error-section hidden">
+      <div class="error-box">
+        <span class="error-icon">⚠</span>
+        <p id="error-message"></p>
+      </div>
+    </section>
+
+    <section id="loading-section" class="loading-section hidden">
+      <div class="loading-inner">
+        <div class="spinner"></div>
+        <p id="loading-message">Loading records…</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Data sourced from Google Sheets &mdash; all records in Polish, Russian &amp; Belarusian</p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
