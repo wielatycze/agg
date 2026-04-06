@@ -22,6 +22,13 @@ const GENEALOGY_CONFIG = {
     marriageUn:   { sheet: "churchRecords", gid: 1045153146 }
   },
 
+  columns: {
+    revisions: {
+      columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"],
+      columnMap: { "имя": "імя" }
+    }
+  },
+
   // ──────────────────────────────────────────────────────────
   // SECTIONS
   // Each section groups related sources into one display block.
@@ -37,16 +44,17 @@ const GENEALOGY_CONFIG = {
   //                      when any member is matched.
   //                      Must be null for all other sections.
   //   columnMap        — optional object mapping sheet column names to display names
-  //                      e.g. { "long_name": "short_name" }
-  //                      renamed columns work in roles, display_columns, etc.
+  //                      e.g. { "long_name": "short_name" } (per-source override only)
+  //   display_columns  — either a string (reference to config.columns key)
+  //                      or an array of column headers to show.
+  //                      Entries may be strings or objects like { label, columns, join }
+  //                      to combine multiple fields into one display cell.
+  //                      Use "_role_" to insert a Role badge column.
+  //                      If display_columns is a string, columnMap is inherited from
+  //                      the column set; per-source columnMap overrides it.
   //   roles            — { column, role } pairs; person is
   //                      matched if their ID appears in ANY
   //                      of these columns
-  //   display_columns  — ordered list of column headers to
-  //                      show; use "_role_" to insert a Role
-  //                      badge column. Entries may be strings or
-  //                      objects like { label, columns, join } to
-  //                      combine multiple fields into one display cell.
   //   household_columns — REVISIONS ONLY: ordered list of column
   //                      headers to show once per household above the table.
   //                      Entries may be strings or objects like
@@ -65,14 +73,13 @@ const GENEALOGY_CONFIG = {
 
         {
           tab:              "revision1811",
-          columnMap:        { "имя": "імя" },
           label:            "Рэвізская сказка, маёнтак Вяляцічы, 1811 год",
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
-          display_columns: ["родство", "імя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
+          display_columns: "revisions"
         },
 
         {
@@ -83,7 +90,7 @@ const GENEALOGY_CONFIG = {
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
-          display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
+          display_columns: "revisions"
         },
 
         {
@@ -94,7 +101,7 @@ const GENEALOGY_CONFIG = {
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
-          display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
+          display_columns: "revisions"
         },
 
         {
@@ -105,7 +112,7 @@ const GENEALOGY_CONFIG = {
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
-          display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
+          display_columns: "revisions"
         },
 
         {
@@ -116,7 +123,7 @@ const GENEALOGY_CONFIG = {
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", "№ пред.", { template: "хата №{№}", column: "№" }],
-          display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
+          display_columns: "revisions"
         }
 
       ]

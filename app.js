@@ -34,6 +34,54 @@ function renameColumns(rows, columnMap) {
 }
 
 /**
+ * Resolve source.display_columns, which can be either:
+ * - a string: reference to config.columns (e.g. "revisions")
+ * - an array: inline column definitions
+ * If columnMap is present, apply it to column names in the array.
+ */
+function resolveDisplayColumns(source, config, colMap = null) {
+  let cols = source.display_columns;
+  
+  // If it's a string, look it up in config.columns
+  if (typeof cols === 'string') {
+    if (config.columns?.[cols]) {
+      const colDef = config.columns[cols];
+      cols = Array.isArray(colDef) ? colDef : (colDef.columns ?? []);
+    } else {
+      cols = [];
+    }
+  }
+  
+  // Apply columnMap to column names
+  if (colMap && Array.isArray(cols)) {
+    cols = cols.map(col => {
+      if (typeof col === 'string' && colMap[col]) {
+        return colMap[col];
+      }
+      return col;
+    });
+  }
+  
+  return cols || [];
+}
+
+/**
+ * Resolve source.display_columns to get the columnMap.
+ * If display_columns is a string reference, look up the columnMap in that column set.
+ */
+function resolveColumnMap(source, config) {
+  if (source.columnMap) {
+    return source.columnMap;
+  }
+  if (typeof source.display_columns === 'string' && config.columns?.[source.display_columns]) {
+    const colDef = config.columns[source.display_columns];
+    // columnMap is only available in object format
+    return !Array.isArray(colDef) ? (colDef.columnMap ?? null) : null;
+  }
+  return null;
+}
+
+/**
  * Minimal but robust CSV parser that handles quoted fields and embedded commas/newlines.
  * Returns array of objects keyed by the first row (headers).
  */
@@ -199,9 +247,10 @@ function makeLinkIcon(url) {
 }
 
 function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config) {
-  const displayCols = source.display_columns.filter(c => c !== '_role_');
+  const colMap = resolveColumnMap(source, config);
+  const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
   const householdCols = source.household_columns || [];
-  const showRole = source.display_columns.includes('_role_');
+  const showRole = resolveDisplayColumns(source, config, colMap).includes('_role_');
   const hasGid   = !!resolveSourceSheetTab(source, config).gid;
   const isHousehold = !!source.household_column;
 
@@ -260,8 +309,9 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
 }
 
 function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config) {
-  const displayCols = source.display_columns.filter(c => c !== '_role_');
-  const showRole = source.display_columns.includes('_role_');
+  const colMap = resolveColumnMap(source, config);
+  const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
+  const showRole = resolveDisplayColumns(source, config, colMap).includes('_role_');
   const hasGid   = !!resolveSourceSheetTab(source, config).gid && hasLink;
 
   const table = document.createElement('table');
@@ -452,8 +502,9 @@ async function runSearch(personId) {
       }
 
       // Apply column mapping if defined
-      if (source.columnMap) {
-        allRows = renameColumns(allRows, source.columnMap);
+      const colMap = resolveColumnMap(source, config);
+      if (colMap) {
+        allRows = renameColumns(allRows, colMap);
       }
 
       const match = matchSource(source, allRows, personId);
