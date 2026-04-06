@@ -270,17 +270,35 @@ const GENEALOGY_CONFIG = {
           label:            "Вяляцічы, уніацкая царква",
           household_column: null,
           roles: [
-            { column: "#крестный 1", role: "Witness 1" },
-            { column: "#крестный 2", role: "Witness 2" }
+            { column: "#крестный 1", role: "Сведка #1" },
+            { column: "#крестный 2", role: "Сведка #2" }
           ],
           display_columns: ["год", "день рождения", "месяц рождения", "имя ребенка", "имя отца", "имя матери", "фамилия", "н. п.", "крестный 1", "крестный 2"]
         }
 
         // Р/Велятичи пр: add when godparent ID column names are known
       ]
+    },
+        // ── WITNESS AT MARRIAGES ─────────────────────────────────
+
+    {
+      id: "witness_marriage",
+      label: "Сведкі - шлюбы",
+      icon:  "👁",
+      sources: [
+        {
+          tab:              "marriageUn",
+          label:            "Вяляцічы, уніацкая царква",
+          household_column: null,
+          roles: [
+            { column: "#свидетель1",  role: "Сведка #1" },
+            { column: "#свидетель2",  role: "Сведка #2" },
+            { column: "#свидетель3",  role: "Сведка #3" },
+          ],
+          display_columns: ["_role_","год", "№", "1", "2", "3", "4", "5", "6", "7", "8"]    }
+      ]
     }
 
-    // ── WITNESS AT MARRIAGES ─────────────────────────────────
     
 
   ] // end sections
