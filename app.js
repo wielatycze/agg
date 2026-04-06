@@ -72,7 +72,9 @@ function isDisplayColumnObject(col) {
 }
 
 function formatDisplayValue(row, colSpec) {
-  if (typeof colSpec === 'string') return row[colSpec] ?? '';
+  if (typeof colSpec === 'string') {
+    return row[colSpec] ?? '';
+  }
   if (isDisplayColumnObject(colSpec)) {
     const values = colSpec.columns
       .map(column => row[column] ?? '')
@@ -84,6 +86,13 @@ function formatDisplayValue(row, colSpec) {
         return value;
       });
     return values.length === 0 ? '' : values.join(colSpec.join ?? ' ');
+  }
+  if (colSpec && typeof colSpec === 'object' && colSpec.template) {
+    let text = colSpec.template;
+    const column = colSpec.column;
+    const value = row[column] ?? '';
+    text = text.replace(new RegExp(`\\{${column}\\}`, 'g'), value);
+    return text;
   }
   return '';
 }
@@ -160,12 +169,57 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
   const hasGid   = !!source.gid;
   const isHousehold = !!source.household_column;
 
-  // Total extra columns before data: link? | role?
-  const extraColCount = (hasGid ? 1 : 0) + (showRole ? 1 : 0);
-  const totalCols = extraColCount + displayCols.length;
-
   const wrap = document.createElement('div');
   wrap.className = 'record-table-wrap';
+
+  if (!isHousehold) {
+    // Non-household: single table
+    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  // Household mode: group by household
+  const householdGroups = new Map();
+  displayIndices.forEach(rowIdx => {
+    const row = allRows[rowIdx];
+    const hVal = normaliseId(row[source.household_column]);
+    if (!householdGroups.has(hVal)) householdGroups.set(hVal, []);
+    householdGroups.get(hVal).push(rowIdx);
+  });
+
+  // For each household
+  for (const [hVal, rowIndices] of householdGroups) {
+    const householdDiv = document.createElement('div');
+    householdDiv.className = 'household-section';
+
+    // Household info
+    if (householdCols.length > 0) {
+      const firstRowIdx = rowIndices[0];
+      const firstRow = allRows[firstRowIdx];
+      const infoText = householdCols.map(col => formatDisplayValue(firstRow, col)).filter(v => v).join(', ');
+      if (infoText) {
+        const infoP = document.createElement('p');
+        infoP.className = 'household-info';
+        infoP.textContent = infoText;
+        householdDiv.appendChild(infoP);
+      }
+    }
+
+    // Person table
+    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles);
+    householdDiv.appendChild(table);
+
+    wrap.appendChild(householdDiv);
+  }
+
+  return wrap;
+}
+
+function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles) {
+  const displayCols = source.display_columns.filter(c => c !== '_role_');
+  const showRole = source.display_columns.includes('_role_');
+  const hasGid   = !!source.gid;
 
   const table = document.createElement('table');
   table.className = 'record-table';
@@ -192,35 +246,9 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
 
   // Body
   const tbody = table.createTBody();
-  let prevHouseholdVal = null;
-  // For household mode: track the first matched rowIdx per household value
-  // so we can put the link only on that block's first matched row.
-  const householdLinkEmitted = new Set(); // household values already given a link
-
   displayIndices.forEach((rowIdx) => {
     const row = allRows[rowIdx];
     const isMatched = matchedSet.has(rowIdx);
-
-    // Household separator
-    if (isHousehold) {
-      const hVal = normaliseId(row[source.household_column]);
-      if (hVal !== prevHouseholdVal) {
-        if (prevHouseholdVal !== null) {
-          // Add gap row between households
-          const sepRow = tbody.insertRow();
-          sepRow.className = 'household-gap';
-          const td = sepRow.insertCell();
-          td.colSpan = totalCols;
-        }
-        // Add household header row
-        const headerRow = tbody.insertRow();
-        headerRow.className = 'household-header';
-        const headerTd = headerRow.insertCell();
-        headerTd.colSpan = totalCols;
-        headerTd.textContent = householdCols.map(col => formatDisplayValue(row, col)).filter(v => v).join(' | ');
-      }
-      prevHouseholdVal = hVal;
-    }
 
     const tr = tbody.insertRow();
     if (isMatched) tr.className = 'matched-row';
@@ -229,20 +257,8 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
     if (hasGid) {
       const td = tr.insertCell();
       td.className = 'col-link';
-
-      if (isHousehold) {
-        // One link per household block: emit only on the first matched row of each household
-        const hVal = normaliseId(row[source.household_column]);
-        if (isMatched && !householdLinkEmitted.has(hVal)) {
-          householdLinkEmitted.add(hVal);
-          const url = sheetRowUrl(source, rowIdx);
-          if (url) td.appendChild(makeLinkIcon(url));
-        }
-      } else {
-        // One link per row (non-household sources)
-        const url = sheetRowUrl(source, rowIdx);
-        if (url) td.appendChild(makeLinkIcon(url));
-      }
+      const url = sheetRowUrl(source, rowIdx);
+      if (url) td.appendChild(makeLinkIcon(url));
     }
 
     // ── Role cell ──
@@ -263,8 +279,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
     });
   });
 
-  wrap.appendChild(table);
-  return wrap;
+  return table;
 }
 
 function renderSection(section, results) {

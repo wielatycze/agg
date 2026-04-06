@@ -33,9 +33,9 @@ const GENEALOGY_CONFIG = {
   //                      objects like { label, columns, join } to
   //                      combine multiple fields into one display cell.
   //   household_columns — REVISIONS ONLY: ordered list of column
-  //                      headers to show once per household in a
-  //                      header row. Entries may be strings or
-  //                      objects like { label, columns, join }.
+  //                      headers to show once per household above the table.
+  //                      Entries may be strings or objects like
+  //                      { template: "text {column}", column: "col" } for custom formatting.
   //                      Must be null for all other sections.
   // ──────────────────────────────────────────────────────────
 
@@ -57,7 +57,7 @@ const GENEALOGY_CONFIG = {
           roles: [
             { column: "#", role: "Person" }
           ],
-          household_columns: ["тип", "н.п.", "№"],
+          household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
           display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
@@ -70,7 +70,7 @@ const GENEALOGY_CONFIG = {
           roles: [
             { column: "#", role: "Person" }
           ],
-          household_columns: ["тип", "н.п.", "№"],
+          household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
           display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
@@ -83,7 +83,7 @@ const GENEALOGY_CONFIG = {
           roles: [
             { column: "#", role: "Person" }
           ],
-          household_columns: ["тип", "н.п.", "№"],
+          household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
           display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
@@ -96,7 +96,7 @@ const GENEALOGY_CONFIG = {
           roles: [
             { column: "#", role: "Person" }
           ],
-          household_columns: ["тип", "н.п.", "№"],
+          household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
           display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
@@ -109,7 +109,7 @@ const GENEALOGY_CONFIG = {
           roles: [
             { column: "#", role: "Person" }
           ],
-          household_columns: ["тип", "н.п.", "№ пред.", "№"],
+          household_columns: ["тип", "н.п.", "№ пред.", { template: "хата №{№}", column: "№" }],
           display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         }
 
