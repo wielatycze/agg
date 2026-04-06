@@ -163,8 +163,8 @@ function formatDisplayValue(row, colSpec) {
       .map(column => row[column] ?? '')
       .filter(value => value !== '')
       .map(value => {
-        if (colSpec.format === 'date' && /^[0-9]+$/.test(value)) {
-          return value.padStart(2, '0');
+        if (colSpec.format === 'date' && /^\d+$/.test(String(value))) {
+          return String(value).padStart(2, '0');
         }
         return value;
       });
