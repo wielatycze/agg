@@ -59,7 +59,7 @@ const GENEALOGY_CONFIG = {
         // --------------------------------------------------
 
         {
-          sheet_id: "2PACX-1vQQOPRo28IKaerQQQzoA5lebigBZQRl8Fg8_1cEd1EgVeT5Qe2B61FftEVzq96uoVrRDaA0pVRGfKkm",
+          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
           tab:      "1811 (НИАБ 333-9-201)",
           label:    "Рэвізская сказка, маёнтак Вяляцічы, 1811 год",
           gid:      1765304438,               // replace null with e.g. "0" or "1234567890"
