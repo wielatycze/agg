@@ -375,7 +375,12 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     // ── Data cells ──
     displayCols.forEach(col => {
       const td = tr.insertCell();
-      td.textContent = formatDisplayValue(row, col);
+      const val = formatDisplayValue(row, col);
+      td.textContent = val;
+      // Mark long-text columns so CSS can give them natural width
+      const colName = typeof col === 'string' ? col : (col.label ?? '');
+      const isNumeric = /возраст|№|год|день|месяц|лист/i.test(colName) || /^\d+$/.test(val);
+      if (!isNumeric) td.classList.add('col-text');
     });
   });
 
@@ -417,6 +422,9 @@ function renderSection(section, results, config) {
     return div;
   }
 
+  const body = document.createElement('div');
+  body.className = 'result-section-body';
+
   section.sources.forEach((source, idx) => {
     const result = results[idx];
     if (!result) return;
@@ -430,11 +438,16 @@ function renderSection(section, results, config) {
     group.appendChild(label);
 
     const { displayIndices, matchedSet, matchedRoles, allRows } = result;
-    const table = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config);
-    group.appendChild(table);
+    const tableWrap = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config);
+    tableWrap.style.border = '1px solid var(--border)';
+    tableWrap.style.borderTop = 'none';
+    tableWrap.style.borderRadius = '0 0 var(--radius-sm) var(--radius-sm)';
+    group.appendChild(tableWrap);
 
-    div.appendChild(group);
+    body.appendChild(group);
   });
+
+  div.appendChild(body);
 
   return div;
 }
