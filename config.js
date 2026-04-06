@@ -233,7 +233,7 @@ const GENEALOGY_CONFIG = {
     }
 
     // ── WITNESS AT MARRIAGES ─────────────────────────────────
-    {
+    
 
   ] // end sections
 };
