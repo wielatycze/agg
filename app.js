@@ -155,12 +155,14 @@ function makeLinkIcon(url) {
 
 function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) {
   const displayCols = source.display_columns.filter(c => c !== '_role_');
+  const householdCols = source.household_columns || [];
   const showRole = source.display_columns.includes('_role_');
   const hasGid   = !!source.gid;
   const isHousehold = !!source.household_column;
 
   // Total extra columns before data: link? | role?
   const extraColCount = (hasGid ? 1 : 0) + (showRole ? 1 : 0);
+  const totalCols = extraColCount + displayCols.length;
 
   const wrap = document.createElement('div');
   wrap.className = 'record-table-wrap';
@@ -202,11 +204,20 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
     // Household separator
     if (isHousehold) {
       const hVal = normaliseId(row[source.household_column]);
-      if (prevHouseholdVal !== null && hVal !== prevHouseholdVal) {
-        const sepRow = tbody.insertRow();
-        sepRow.className = 'household-gap';
-        const td = sepRow.insertCell();
-        td.colSpan = displayCols.length + extraColCount;
+      if (hVal !== prevHouseholdVal) {
+        if (prevHouseholdVal !== null) {
+          // Add gap row between households
+          const sepRow = tbody.insertRow();
+          sepRow.className = 'household-gap';
+          const td = sepRow.insertCell();
+          td.colSpan = totalCols;
+        }
+        // Add household header row
+        const headerRow = tbody.insertRow();
+        headerRow.className = 'household-header';
+        const headerTd = headerRow.insertCell();
+        headerTd.colSpan = totalCols;
+        headerTd.textContent = householdCols.map(col => formatDisplayValue(row, col)).filter(v => v).join(' | ');
       }
       prevHouseholdVal = hVal;
     }
