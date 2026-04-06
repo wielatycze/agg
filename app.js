@@ -11,7 +11,7 @@
  * Uses the gviz CSV endpoint — no API key needed.
  */
 async function fetchSheetTab(sheetId, tabName) {
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+  const url = `https://docs.google.com/spreadsheets/d/<ID>/export?format=csv&gid=<GID>`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch "${tabName}" (HTTP ${res.status})`);
   const text = await res.text();
