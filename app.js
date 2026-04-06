@@ -290,11 +290,9 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
         const infoDiv = document.createElement('div');
         infoDiv.className = 'household-info';
 
-        tokens.forEach(token => {
-          const span = document.createElement('span');
-          span.textContent = token;
-          infoDiv.appendChild(span);
-        });
+        const text = document.createElement('span');
+        text.textContent = tokens.join(',  ');
+        infoDiv.appendChild(text);
 
         if (hasGid) {
           const url = sheetRowUrl(source, firstRowIdx, config);
@@ -323,6 +321,38 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
 
   const table = document.createElement('table');
   table.className = 'record-table';
+
+  // ── Colgroup: set explicit widths by column type ──
+  const colgroup = document.createElement('colgroup');
+  if (hasGid) {
+    const col = document.createElement('col');
+    col.style.width = '32px';
+    colgroup.appendChild(col);
+  }
+  if (showRole) {
+    const col = document.createElement('col');
+    col.style.width = '90px';
+    colgroup.appendChild(col);
+  }
+  displayCols.forEach(colSpec => {
+    const col = document.createElement('col');
+    const name = typeof colSpec === 'string' ? colSpec : (colSpec.label ?? '');
+    // Tight columns: numbers, years, page refs, day/month
+    if (/возраст|№|год|день|месяц|лист|пред/i.test(name)) {
+      col.style.width = '52px';
+    } else if (/тип|пометка|изменения/i.test(name)) {
+      col.style.width = '70px';
+    } else if (/родство/i.test(name)) {
+      col.style.width = '90px';
+    } else if (/комментари/i.test(name)) {
+      col.style.width = '200px';
+    } else {
+      // names, places, etc — natural width up to a cap
+      col.style.width = '120px';
+    }
+    colgroup.appendChild(col);
+  });
+  table.appendChild(colgroup);
 
   // Header
   const thead = table.createTHead();
@@ -375,12 +405,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     // ── Data cells ──
     displayCols.forEach(col => {
       const td = tr.insertCell();
-      const val = formatDisplayValue(row, col);
-      td.textContent = val;
-      // Mark long-text columns so CSS can give them natural width
-      const colName = typeof col === 'string' ? col : (col.label ?? '');
-      const isNumeric = /возраст|№|год|день|месяц|лист/i.test(colName) || /^\d+$/.test(val);
-      if (!isNumeric) td.classList.add('col-text');
+      td.textContent = formatDisplayValue(row, col);
     });
   });
 
@@ -439,9 +464,6 @@ function renderSection(section, results, config) {
 
     const { displayIndices, matchedSet, matchedRoles, allRows } = result;
     const tableWrap = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config);
-    tableWrap.style.border = '1px solid var(--border)';
-    tableWrap.style.borderTop = 'none';
-    tableWrap.style.borderRadius = '0 0 var(--radius-sm) var(--radius-sm)';
     group.appendChild(tableWrap);
 
     body.appendChild(group);
