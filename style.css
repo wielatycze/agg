@@ -291,22 +291,65 @@ button#search-btn:active { transform: translateY(1px); }
 
 .source-label {
   font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-faint);
-  padding: 0.55rem 1.5rem;
+  color: #fff;
+  padding: 0.6rem 1.5rem;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ─── Household blocks ──────────────────────────────────── */
+.household-section {
+  border-top: 2px solid var(--border);
+}
+.household-section:first-of-type {
+  border-top: none;
+}
+
+.household-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.65rem 1.5rem;
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-mid);
+}
+
+/* Each token inside household-info (тип, н.п., хата №) */
+.household-info > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.15rem 0.65rem;
+  font-size: 0.73rem;
+  color: var(--text);
+  white-space: nowrap;
 }
 
 /* ─── Data Tables ───────────────────────────────────────── */
-.record-table-wrap { overflow-x: auto; }
+.record-table-wrap {
+  overflow-x: auto;
+  /* ensure horizontal scroll rather than squishing */
+  -webkit-overflow-scrolling: touch;
+}
 
 table.record-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
+  /* prevent columns from collapsing */
+  table-layout: auto;
 }
 
 table.record-table thead tr {
@@ -331,6 +374,7 @@ table.record-table td {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   line-height: 1.4;
+  white-space: nowrap;
 }
 
 table.record-table tbody tr:last-child td { border-bottom: none; }
@@ -384,7 +428,7 @@ a.row-link:hover {
   box-shadow: 0 2px 6px rgba(79,110,247,0.3);
 }
 
-/* Household separator */
+/* Household separator — no longer used but kept for safety */
 tr.household-gap td {
   padding: 0.1rem 0;
   border-bottom: 2px dashed var(--border);

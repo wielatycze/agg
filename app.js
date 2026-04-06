@@ -282,19 +282,26 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
     if (householdCols.length > 0) {
       const firstRowIdx = rowIndices[0];
       const firstRow = allRows[firstRowIdx];
-      const infoText = householdCols.map(col => formatDisplayValue(firstRow, col)).filter(v => v).join(', ');
-      if (infoText) {
-        const infoP = document.createElement('p');
-        infoP.className = 'household-info';
-        infoP.textContent = infoText;
+      const tokens = householdCols
+        .map(col => formatDisplayValue(firstRow, col))
+        .filter(v => v);
+
+      if (tokens.length > 0) {
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'household-info';
+
+        tokens.forEach(token => {
+          const span = document.createElement('span');
+          span.textContent = token;
+          infoDiv.appendChild(span);
+        });
+
         if (hasGid) {
           const url = sheetRowUrl(source, firstRowIdx, config);
-          if (url) {
-            const link = makeLinkIcon(url);
-            infoP.appendChild(link);
-          }
+          if (url) infoDiv.appendChild(makeLinkIcon(url));
         }
-        householdDiv.appendChild(infoP);
+
+        householdDiv.appendChild(infoDiv);
       }
     }
 
