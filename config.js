@@ -31,14 +31,14 @@ const GENEALOGY_CONFIG = {
   //   tab              — tab key defined in config.tabs, or the exact tab name for legacy support
   //                      not required when gid is provided, because gid is enough for fetching.
   //   label            — human label shown on the page
-  //   gid              — numeric tab ID for deep-linking
-  //                      (from ...edit#gid=XXXXXXX in URL)
-  //                      set to null to disable row links
   //   household_column — REVISIONS ONLY: column whose value
   //                      groups household members; all rows
   //                      with the same value are displayed
   //                      when any member is matched.
   //                      Must be null for all other sections.
+  //   columnMap        — optional object mapping sheet column names to display names
+  //                      e.g. { "long_name": "short_name" }
+  //                      renamed columns work in roles, display_columns, etc.
   //   roles            — { column, role } pairs; person is
   //                      matched if their ID appears in ANY
   //                      of these columns
@@ -65,13 +65,14 @@ const GENEALOGY_CONFIG = {
 
         {
           tab:              "revision1811",
+          columnMap:        { "имя": "імя" },
           label:            "Рэвізская сказка, маёнтак Вяляцічы, 1811 год",
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
-          display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
+          display_columns: ["родство", "імя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"]
         },
 
         {

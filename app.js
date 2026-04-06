@@ -19,6 +19,21 @@ async function fetchSheetTab(sheetId, gid) {
 }
 
 /**
+ * Apply a column map to rename columns in row objects.
+ */
+function renameColumns(rows, columnMap) {
+  if (!columnMap || Object.keys(columnMap).length === 0) return rows;
+  return rows.map(row => {
+    const newRow = {};
+    for (const [key, value] of Object.entries(row)) {
+      const newKey = columnMap[key] ?? key;
+      newRow[newKey] = value;
+    }
+    return newRow;
+  });
+}
+
+/**
  * Minimal but robust CSV parser that handles quoted fields and embedded commas/newlines.
  * Returns array of objects keyed by the first row (headers).
  */
@@ -427,13 +442,18 @@ async function runSearch(personId) {
     for (const source of sources) {
       const { sheetId, gid } = resolveSourceSheetTab(source, config);
       const cacheKey = `${sheetId}::${gid}`;
-      const allRows = await fetchCache[cacheKey];
+      let allRows = await fetchCache[cacheKey];
       done++;
       setLoading(`Searching… (${done} / ${totalSources} sources)`);
 
       if (allRows.length === 0) {
         sectionResults.push(null);
         continue;
+      }
+
+      // Apply column mapping if defined
+      if (source.columnMap) {
+        allRows = renameColumns(allRows, source.columnMap);
       }
 
       const match = matchSource(source, allRows, personId);
