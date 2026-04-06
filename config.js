@@ -124,7 +124,7 @@ const GENEALOGY_CONFIG = {
     // ── BIRTHS ──────────────────────────────────────────────
     {
       id:    "births",
-      label: "Метрычныя кнігі - аб нараджэннях",
+      label: "Метрычныя кнігі - нараджэнне",
       icon:  "🕯",
       sources: [
 
@@ -140,34 +140,43 @@ const GENEALOGY_CONFIG = {
             { column: "#матери",    role: "Mother" }
           ],
           display_columns: ["год", "день рождения",	"месяц рождения", "день крещения", "месяц крещения",	"имя ребенка",	"имя отца", "имя матери",	"фамилия",	"н. п.", 	"крестный 1",	"крестный 2"]
+        },
+         {
+          sheet_id: "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:      "Р/Велятичи пр",
+          label:    "Вяляцічы, праваслаўная царква",
+          gid:      0,
+          household_column: null,
+          roles: [
+            { column: "#ребенка",  role: "Child" },
+            { column: "#отца",     role: "Father" },
+            { column: "#матери",    role: "Mother" }
+          ],
+          display_columns: ["год", "№", "день рождения",	"месяц рождения", "день крещения", "месяц крещения",	"имя ребенка",	"имя отца", "отчество отца", "имя матери",	
+                            "отчество отца", "фамилия",	"восприемник",	"восприемница"]
         }
-
-        // Add more birth sources here…
       ]
     },
 
     // ── MARRIAGES ───────────────────────────────────────────
     {
       id:    "marriages",
-      label: "Marriages (Метрики — бракосочетание)",
+      label: "Метрычныя кнігі - шлюбы",
       icon:  "💍",
       sources: [
 
         {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "Marriages_ParishA",
-          label:    "Parish A — Marriages",
+          sheet_id: "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
+          tab:      "Б/Велятичи ун",
+          label:    "Вяляцічы, уніацкая царква",
           gid:      null,
           household_column: null,
           roles: [
-            { column: "id_pana_mlodego",   role: "Groom" },
-            { column: "id_panny_mlodej",   role: "Bride" },
-            { column: "id_ojca_pana",      role: "Groom's Father" },
-            { column: "id_matki_pana",     role: "Groom's Mother" },
-            { column: "id_ojca_panny",     role: "Bride's Father" },
-            { column: "id_matki_panny",    role: "Bride's Mother" }
+            { column: "#жениха",   role: "Groom" },
+            { column: "#невесты",   role: "Bride" },
+
           ],
-          display_columns: ["rok", "data", "pan_mlody", "panna_mloda", "parafia", "_role_"]
+          display_columns: ["год", "№", "dd", "mm", "parafia", "1", "2", "3", "4", "5", "6", "7", "8"]
         }
 
       ]
