@@ -135,7 +135,7 @@ const GENEALOGY_CONFIG = {
           roles: [
             { column: "#ребенка", role: "Child" }
           ],
-          display_columns: [
+          display_columns: [ "год",
             { label: "дата рождения", columns: ["день рождения", "месяц рождения"], join: ".", format: "date" },
             { label: "дата крещения", columns: ["день крещения", "месяц крещения"], join: ".", format: "date" },
             "имя ребенка",
@@ -156,6 +156,7 @@ const GENEALOGY_CONFIG = {
             { column: "#ребенка", role: "Child" }
           ],
           display_columns: [
+            "год",
             { label: "дата рождения", columns: ["день рождения", "месяц рождения"], join: "." },
             { label: "дата крещения", columns: ["день крещения", "месяц крещения"], join: "." },
             "имя ребенка",
@@ -187,7 +188,7 @@ const GENEALOGY_CONFIG = {
             { column: "#жениха",  role: "Groom" },
             { column: "#невесты", role: "Bride" }
           ],
-          display_columns: ["_role_","год", "№", "1", "2"]    }
+          display_columns: ["_role_","год", "№", "1", "2", "3", "4", "5", "6", "7", "8"]    }
 
         // Add more marriage sources here…
       ]
@@ -209,6 +210,7 @@ const GENEALOGY_CONFIG = {
             { column: "#матери", role: "Mother" }
           ],
           display_columns: [
+            "год",
             { label: "дата рождения", columns: ["день рождения", "месяц рождения"], join: "." },
             { label: "дата крещения", columns: ["день крещения", "месяц крещения"], join: "." },
             "имя ребенка",
@@ -230,6 +232,7 @@ const GENEALOGY_CONFIG = {
             { column: "#матери", role: "Mother" }
           ],
           display_columns: [
+            "год",
             { label: "дата рождения", columns: ["день рождения", "месяц рождения"], join: "." },
             { label: "дата крещения", columns: ["день крещения", "месяц крещения"], join: "." },
             "имя ребенка",
