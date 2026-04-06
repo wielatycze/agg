@@ -155,7 +155,7 @@ const GENEALOGY_CONFIG = {
             { column: "#жениха",  role: "Groom" },
             { column: "#невесты", role: "Bride" }
           ],
-          display_columns: ["год", "№", "dd", "mm", "parafia", "1", "2", "3", "4", "5", "6", "7", "8"]
+          display_columns: ["год", "№", "dd", "mm", "1", "2", "3", "4", "5", "6", "7", "8"]
         }
 
         // Add more marriage sources here…
