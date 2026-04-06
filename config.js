@@ -173,7 +173,7 @@ const GENEALOGY_CONFIG = {
           household_column: null,
           roles: [
             { column: "#жениха",   role: "Groom" },
-            { column: "#невесты",   role: "Bride" },
+            { column: "#невесты",   role: "Bride" }
 
           ],
           display_columns: ["год", "№", "dd", "mm", "parafia", "1", "2", "3", "4", "5", "6", "7", "8"]
