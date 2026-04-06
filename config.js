@@ -62,7 +62,7 @@ const GENEALOGY_CONFIG = {
           sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
           tab:      "1811 (НИАБ 333-9-201)",
           label:    "Рэвізская сказка, маёнтак Вяляцічы, 1811 год",
-          gid:      1765304438,               // replace null with e.g. "0" or "1234567890"
+          gid:      1765304438,              
           household_column: "house_id",
           roles: [
             { column: "#", role: "Person" }
@@ -71,51 +71,51 @@ const GENEALOGY_CONFIG = {
         },
 
         {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "1816",
-          label:    "Revision 1816",
-          gid:      null,
-          household_column: "nr_domu",
+          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:      "1816 (НИАБ 333-9-83)",
+          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1816 год",
+          gid:      1330631543,
+          household_column: "house_id",
           roles: [
-            { column: "id_osoby", role: "Person" }
+            { column: "#", role: "Person" }
           ],
-          display_columns: ["nr_domu", "imie", "nazwisko", "wiek", "uwagi"]
+          display_columns: ["тип",	"н.п.",	"№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
         },
 
         {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "1834",
-          label:    "Revision 1834",
-          gid:      null,
-          household_column: "nr_domu",
+          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:      "1834 (НИАБ 333-9-542)",
+          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1834 год",
+          gid:      1743797303,
+          household_column: "house_id",
           roles: [
-            { column: "id_osoby", role: "Person" }
+            { column: "#", role: "Person" }
           ],
-          display_columns: ["nr_domu", "imie", "nazwisko", "wiek", "uwagi"]
+          display_columns: ["тип",	"н.п.",	"№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
         },
 
         {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "1850",
-          label:    "Revision 1850",
-          gid:      null,
-          household_column: "nr_domu",
+          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:      "1850 (НИАБ 333-9-408)",
+          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1850 год",
+          gid:      1936198662,
+          household_column: "house_id",
           roles: [
-            { column: "id_osoby", role: "Person" }
+            { column: "#", role: "Person" }
           ],
-          display_columns: ["nr_domu", "imie", "nazwisko", "wiek", "uwagi"]
+          display_columns: ["тип",	"н.п.",	"№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
         },
 
         {
-          sheet_id: "REPLACE_WITH_YOUR_SHEET_ID",
-          tab:      "1858",
-          label:    "Revision 1858",
-          gid:      null,
-          household_column: "nr_domu",
+          sheet_id: "1AsAQfxHkO-q-X9wKGyuuK330LcrpZi5vfnv5--6jbLM",
+          tab:      "1858 (НИАБ 333-9-1090)",
+          label:    "Рэвізская сказка, маёнтак Вяляцічы, 1858 год",
+          gid:      2074719809,
+          household_column: "house_id",
           roles: [
-            { column: "id_osoby", role: "Person" }
+            { column: "#", role: "Person" }
           ],
-          display_columns: ["nr_domu", "imie", "nazwisko", "wiek", "uwagi"]
+          display_columns: ["тип",	"н.п.",	"№ пред.", "№", "родство", "имя", "отчество","фамилия","пометка","возраст на прошлую",	"изменения", "возраст сейчас",	"комментарии",	"листы"]
         }
 
       ]
