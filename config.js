@@ -230,32 +230,10 @@ const GENEALOGY_CONFIG = {
 
         // Р/Велятичи пр: add when godparent ID column names are known
       ]
-    },
+    }
 
     // ── WITNESS AT MARRIAGES ─────────────────────────────────
     {
-      id:    "witness_marriage",
-      label: "Сведкі — шлюбы",
-      icon:  "👁",
-      sources: [
-
-        {
-          sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
-          tab:              "Б/Велятичи ун",
-          label:            "Вяляцічы, уніацкая царква",
-          gid:              1045153146,
-          household_column: null,
-          roles: [
-            { column: "#свидетель1", role: "Witness 1" },
-            { column: "#свидетель2", role: "Witness 1" },
-            { column: "#свидетель3", role: "Witness 1" }
-          ],
-          display_columns: ["год", "№", "dd", "mm", "1", "2", "3", "4", "5", "6", "7", "8"]
-        }
-
-        // Add more marriage witness sources here…
-      ]
-    }
 
   ] // end sections
 };
