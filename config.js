@@ -149,7 +149,7 @@ const GENEALOGY_CONFIG = {
           sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
           tab:              "Б/Велятичи ун",
           label:            "Вяляцічы, уніацкая царква",
-          gid:              null,
+          gid:              1045153146,
           household_column: null,
           roles: [
             { column: "#жениха",  role: "Groom" },
@@ -243,7 +243,7 @@ const GENEALOGY_CONFIG = {
           sheet_id:         "1OE7oQm51VU4m-G4otwEOVC7j0a423T3ndKDBpHVMojY",
           tab:              "Б/Велятичи ун",
           label:            "Вяляцічы, уніацкая царква",
-          gid:              null,
+          gid:              1045153146,
           household_column: null,
           roles: [
             { column: "#свидетель1", role: "Witness 1" },
