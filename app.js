@@ -10,10 +10,10 @@
  * Requires the sheet to be published / "anyone with link can view".
  * Uses the gviz CSV endpoint — no API key needed.
  */
-async function fetchSheetTab(sheetId, tabName) {
-  const url = `https://docs.google.com/spreadsheets/d/<ID>/export?format=csv&gid=<GID>`;
+async function fetchSheetTab(sheetId, gid) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch "${tabName}" (HTTP ${res.status})`);
+  if (!res.ok) throw new Error(`Failed to fetch gid=${gid} (HTTP ${res.status})`);
   const text = await res.text();
   return parseCSV(text);
 }
@@ -335,7 +335,7 @@ async function runSearch(personId) {
     for (const source of section.sources) {
       const cacheKey = `${source.sheet_id}::${source.tab}`;
       if (!fetchCache[cacheKey]) {
-        fetchCache[cacheKey] = fetchSheetTab(source.sheet_id, source.tab)
+        fetchCache[cacheKey] = fetchSheetTab(source.sheet_id, source.gid)
           .catch(err => { console.warn(`Error fetching ${cacheKey}:`, err); return []; });
       }
     }
