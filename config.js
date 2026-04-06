@@ -29,7 +29,9 @@ const GENEALOGY_CONFIG = {
   //                      of these columns
   //   display_columns  — ordered list of column headers to
   //                      show; use "_role_" to insert a Role
-  //                      badge column
+  //                      badge column. Entries may be strings or
+  //                      objects like { label, columns, join } to
+  //                      combine multiple fields into one display cell.
   // ──────────────────────────────────────────────────────────
 
   sections: [
@@ -120,7 +122,17 @@ const GENEALOGY_CONFIG = {
           roles: [
             { column: "#ребенка", role: "Child" }
           ],
-          display_columns: ["год", "день рождения", "месяц рождения", "день крещения", "месяц крещения", "имя ребенка", "имя отца", "имя матери", "фамилия", "н. п.", "крестный 1", "крестный 2"]
+          display_columns: [
+            { label: "дата рождения", columns: ["день рождения", "месяц рождения"], join: "." },
+            { label: "дата крещения", columns: ["день крещения", "месяц крещения"], join: "." },
+            "имя ребенка",
+            "имя отца",
+            "имя матери",
+            "фамилия",
+            "н. п.",
+            "крестный 1",
+            "крестный 2"
+          ]
         },
 
         {
@@ -132,7 +144,18 @@ const GENEALOGY_CONFIG = {
           roles: [
             { column: "#ребенка", role: "Child" }
           ],
-          display_columns: ["год", "№", "день рождения", "месяц рождения", "день крещения", "месяц крещения", "имя ребенка", "имя отца", "отчество отца", "имя матери", "отчество матери", "фамилия", "восприемник", "восприемница"]
+          display_columns: [
+            { label: "дата рождения", columns: ["день рождения", "месяц рождения"], join: "." },
+            { label: "дата крещения", columns: ["день крещения", "месяц крещения"], join: "." },
+            "имя ребенка",
+            "имя отца",
+            "отчество отца",
+            "имя матери",
+            "отчество матери",
+            "фамилия",
+            "восприемник",
+            "восприемница"
+          ]
         }
 
       ]

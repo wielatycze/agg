@@ -67,6 +67,21 @@ function normaliseId(val) {
   return String(val ?? '').trim();
 }
 
+function isDisplayColumnObject(col) {
+  return typeof col === 'object' && col !== null && Array.isArray(col.columns);
+}
+
+function formatDisplayValue(row, colSpec) {
+  if (typeof colSpec === 'string') return row[colSpec] ?? '';
+  if (isDisplayColumnObject(colSpec)) {
+    const values = colSpec.columns
+      .map(column => row[column] ?? '')
+      .filter(value => value !== '');
+    return values.length === 0 ? '' : values.join(colSpec.join ?? ' ');
+  }
+  return '';
+}
+
 /**
  * Match rows from a source against a target person ID.
  * Returns { matchedRows, tableRows } where tableRows includes full household if configured.
@@ -133,7 +148,7 @@ function makeLinkIcon(url) {
 }
 
 function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) {
-  const dataCols = source.display_columns.filter(c => c !== '_role_');
+  const displayCols = source.display_columns.filter(c => c !== '_role_');
   const showRole = source.display_columns.includes('_role_');
   const hasGid   = !!source.gid;
   const isHousehold = !!source.household_column;
@@ -161,9 +176,9 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
     th.textContent = 'Role';
     headerRow.appendChild(th);
   }
-  dataCols.forEach(col => {
+  displayCols.forEach(col => {
     const th = document.createElement('th');
-    th.textContent = col;
+    th.textContent = typeof col === 'string' ? col : col.label;
     headerRow.appendChild(th);
   });
 
@@ -225,9 +240,9 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
     }
 
     // ── Data cells ──
-    dataCols.forEach(col => {
+    displayCols.forEach(col => {
       const td = tr.insertCell();
-      td.textContent = row[col] ?? '';
+      td.textContent = formatDisplayValue(row, col);
     });
   });
 
