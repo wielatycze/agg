@@ -434,6 +434,13 @@ tr.household-header td {
   border-radius: 4px;
   font-weight: 600;
   text-align: left;
+  position: relative;
+}
+
+.household-info .row-link {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
 }
 
 .household-section {

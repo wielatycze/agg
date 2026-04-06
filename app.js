@@ -174,7 +174,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
 
   if (!isHousehold) {
     // Non-household: single table
-    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles);
+    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, true);
     wrap.appendChild(table);
     return wrap;
   }
@@ -202,12 +202,19 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
         const infoP = document.createElement('p');
         infoP.className = 'household-info';
         infoP.textContent = infoText;
+        if (hasGid) {
+          const url = sheetRowUrl(source, firstRowIdx);
+          if (url) {
+            const link = makeLinkIcon(url);
+            infoP.appendChild(link);
+          }
+        }
         householdDiv.appendChild(infoP);
       }
     }
 
     // Person table
-    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles);
+    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, false);
     householdDiv.appendChild(table);
 
     wrap.appendChild(householdDiv);
@@ -216,10 +223,10 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles) 
   return wrap;
 }
 
-function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles) {
+function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true) {
   const displayCols = source.display_columns.filter(c => c !== '_role_');
   const showRole = source.display_columns.includes('_role_');
-  const hasGid   = !!source.gid;
+  const hasGid   = !!source.gid && hasLink;
 
   const table = document.createElement('table');
   table.className = 'record-table';
