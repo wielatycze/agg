@@ -55,7 +55,7 @@ header {
   align-items: center;
   gap: 1rem;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -87,9 +87,9 @@ h1 {
 /* ─── Main ──────────────────────────────────────────────── */
 main {
   flex: 1;
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 2rem 2rem;
   width: 100%;
 }
 
@@ -373,8 +373,7 @@ table.record-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
-  /* content drives column widths, not the table width */
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 table.record-table thead tr {
@@ -402,10 +401,7 @@ table.record-table td {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   line-height: 1.35;
-  /* let browser size columns to content */
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 table.record-table tbody tr:last-child td { border-bottom: none; }
