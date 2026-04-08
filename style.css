@@ -373,7 +373,7 @@ table.record-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 table.record-table thead tr {
@@ -392,8 +392,7 @@ table.record-table th {
   white-space: normal;
   word-break: break-word;
   vertical-align: bottom;
-  min-width: 2.5rem;   /* ~4 chars */
-  max-width: 100px;
+  overflow: hidden;
 }
 
 table.record-table td {
@@ -402,9 +401,9 @@ table.record-table td {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   line-height: 1.35;
-  white-space: nowrap;
-  min-width: 2.5rem;
-  max-width: 100px;
+  white-space: normal;
+  word-break: break-word;
+  overflow: hidden;
 }
 
 table.record-table tbody tr:last-child td { border-bottom: none; }

@@ -322,10 +322,37 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   const table = document.createElement('table');
   table.className = 'record-table';
 
+  // ── Colgroup: fixed widths per column type ──────────────
+  const colgroup = document.createElement('colgroup');
+  if (hasGid && !source.household_column) {
+    const col = document.createElement('col'); col.style.width = '32px'; colgroup.appendChild(col);
+  }
+  if (showRole) {
+    const col = document.createElement('col'); col.style.width = '80px'; colgroup.appendChild(col);
+  }
+  if (source.household_column) {
+    const col = document.createElement('col'); col.style.width = '32px'; colgroup.appendChild(col);
+  }
+  displayCols.forEach(colSpec => {
+    const col = document.createElement('col');
+    const name = (typeof colSpec === 'string' ? colSpec : (colSpec.label ?? '')).toLowerCase();
+    if (/возраст|день|месяц|лист/.test(name))   { col.style.width = '40px'; }
+    else if (/^№|пред/.test(name))               { col.style.width = '40px'; }
+    else if (/тип|пометка/.test(name))           { col.style.width = '55px'; }
+    else if (/изменения/.test(name))             { col.style.width = '65px'; }
+    else if (/родство/.test(name))               { col.style.width = '80px'; }
+    else if (/отчество/.test(name))              { col.style.width = '90px'; }
+    else if (/имя|фамили|н\.п/.test(name))       { col.style.width = '90px'; }
+    else if (/комментари/.test(name))            { col.style.width = '160px'; }
+    else                                         { col.style.width = '80px'; }
+    colgroup.appendChild(col);
+  });
+  table.appendChild(colgroup);
+
   // Header
   const thead = table.createTHead();
   const headerRow = thead.insertRow();
-  if (hasGid) {
+  if (hasGid && !source.household_column) {
     const th = document.createElement('th');
     th.className = 'col-link';
     th.textContent = '';
@@ -358,8 +385,8 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     const tr = tbody.insertRow();
     if (isMatched) tr.className = 'matched-row';
 
-    // ── Link cell ──
-    if (hasGid) {
+    // ── Link cell (sheet link) — only for non-revision sources ──
+    if (hasGid && !source.household_column) {
       const td = tr.insertCell();
       td.className = 'col-link';
       const url = sheetRowUrl(source, rowIdx, config);
