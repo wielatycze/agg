@@ -303,8 +303,8 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
       }
     }
 
-    // Person table
-    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, false, config);
+    // Person table — hasLink=true so every row gets its own ↗ link
+    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, true, config);
     householdDiv.appendChild(table);
 
     wrap.appendChild(householdDiv);
@@ -336,6 +336,13 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     th.textContent = 'Role';
     headerRow.appendChild(th);
   }
+  // Extra header for internal person link column (revisions only)
+  if (source.household_column) {
+    const th = document.createElement('th');
+    th.className = 'col-link';
+    th.textContent = '';
+    headerRow.appendChild(th);
+  }
   displayCols.forEach(col => {
     const th = document.createElement('th');
     th.textContent = typeof col === 'string' ? col : col.label;
@@ -357,6 +364,26 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
       td.className = 'col-link';
       const url = sheetRowUrl(source, rowIdx, config);
       if (url) td.appendChild(makeLinkIcon(url));
+    }
+
+    // ── Internal person link cell (revision only — reads ID from role columns) ──
+    if (source.household_column) {
+      const td = tr.insertCell();
+      td.className = 'col-link';
+      // Find the person ID from any role column that has a value
+      let personId = null;
+      for (const { column } of source.roles) {
+        const val = normaliseId(row[column]);
+        if (val && val !== '') { personId = val; break; }
+      }
+      if (personId) {
+        const a = document.createElement('a');
+        a.href = `?id=${personId}`;
+        a.className = 'row-link person-link';
+        a.title = `Go to person #${personId}`;
+        a.textContent = '#';
+        td.appendChild(a);
+      }
     }
 
     // ── Role cell ──
