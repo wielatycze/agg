@@ -321,10 +321,14 @@ button#search-btn:active { transform: translateY(1px); }
 
 /* ─── Household blocks ──────────────────────────────────── */
 .household-section {
-  border-top: 3px solid var(--bg);
+  margin-top: 1.25rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 .household-section:first-of-type {
-  border-top: none;
+  margin-top: 0;
 }
 
 .household-info {
@@ -409,15 +413,19 @@ table.record-table td {
 table.record-table tbody tr:last-child td { border-bottom: none; }
 table.record-table tbody tr:hover { background: var(--surface2); }
 
-/* Matched row highlight — strong left border + tinted background */
+/* Matched row highlight — vivid */
 table.record-table tbody tr.matched-row {
-  background: rgba(79,110,247,0.12);
+  background: rgba(79,110,247,0.22);
+}
+table.record-table tbody tr.matched-row td {
+  color: var(--text);
+  font-weight: 600;
 }
 table.record-table tbody tr.matched-row td:first-child {
-  box-shadow: inset 3px 0 0 var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
 }
 table.record-table tbody tr.matched-row:hover {
-  background: rgba(79,110,247,0.18);
+  background: rgba(79,110,247,0.30);
 }
 
 /* Role badge */
