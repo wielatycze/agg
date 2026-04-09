@@ -215,7 +215,11 @@ function matchSource(source, allRows, targetId) {
       .map((_, i) => i)
       .filter(i => householdValues.has(normaliseId(allRows[i][source.household_column])));
   } else {
-    displayIndices = [...matchedSet].sort((a, b) => a - b);
+    displayIndices = [...matchedSet].sort((a, b) => {
+      const yearA = parseInt(allRows[a]['год'] ?? allRows[a]['year'] ?? 0, 10);
+      const yearB = parseInt(allRows[b]['год'] ?? allRows[b]['year'] ?? 0, 10);
+      return yearA - yearB;
+    });
   }
 
   return { displayIndices, matchedSet, matchedRoles };
