@@ -246,7 +246,7 @@ function makeLinkIcon(url) {
   return a;
 }
 
-function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config) {
+function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, highlightMatched = false) {
   const colMap = resolveColumnMap(source, config);
   const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
   const householdCols = source.household_columns || [];
@@ -259,7 +259,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
 
   if (!isHousehold) {
     // Non-household: single table
-    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, true, config);
+    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, true, config, highlightMatched);
     wrap.appendChild(table);
     return wrap;
   }
@@ -304,7 +304,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
     }
 
     // Person table — hasLink=true so every row gets its own ↗ link
-    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, true, config);
+    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, true, config, highlightMatched);
     householdDiv.appendChild(table);
 
     wrap.appendChild(householdDiv);
@@ -336,7 +336,7 @@ function renderCellValue(td, val) {
   });
 }
 
-function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config) {
+function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config, highlightMatched = false) {
   const colMap = resolveColumnMap(source, config);
   const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
   const showRole = resolveDisplayColumns(source, config, colMap).includes('_role_');
@@ -406,7 +406,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     const isMatched = matchedSet.has(rowIdx);
 
     const tr = tbody.insertRow();
-    if (isMatched) tr.className = 'matched-row';
+    if (isMatched && highlightMatched) tr.className = 'matched-row';
 
     // ── Link cell (sheet link) — only for non-revision sources ──
     if (hasGid && !source.household_column) {
@@ -509,7 +509,7 @@ function renderSection(section, results, config) {
     group.appendChild(label);
 
     const { displayIndices, matchedSet, matchedRoles, allRows } = result;
-    const tableWrap = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config);
+    const tableWrap = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, section.highlight_matched ?? false);
     group.appendChild(tableWrap);
 
     body.appendChild(group);

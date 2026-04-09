@@ -100,6 +100,7 @@ const GENEALOGY_CONFIG = {
       id:    "revisions",
       label: "Рэвізскіі сказкі",
       icon:  "📜",
+      highlight_matched: true,
       sources: [
 
         {
@@ -163,6 +164,7 @@ const GENEALOGY_CONFIG = {
     // ── BIRTH RECORD (the person themselves) ────────────────
     {
       id:    "births",
+      highlight_matched: false,
       label: "Метрычныя кнігі — нараджэнне",
       icon:  "🕯",
       sources: [
@@ -193,6 +195,7 @@ const GENEALOGY_CONFIG = {
     // ── MARRIAGES ───────────────────────────────────────────
     {
       id:    "marriages",
+      highlight_matched: false,
       label: "Метрычныя кнігі — шлюбы",
       icon:  "💍",
       sources: [
@@ -215,6 +218,7 @@ const GENEALOGY_CONFIG = {
     // ── CHILDREN — BIRTH RECORDS ─────────────────────────────
     {
       id:    "children_births",
+      highlight_matched: false,
       label: "Дзеці — метрычныя кнігі нараджэння",
       icon:  "👶",
       sources: [
@@ -247,6 +251,7 @@ const GENEALOGY_CONFIG = {
     // ── DEATHS ──────────────────────────────────────────────
     {
       id:    "deaths",
+      highlight_matched: false,
       label: "Метрычныя кнігі — смерць",
       icon:  "✝",
       sources: [
@@ -257,6 +262,7 @@ const GENEALOGY_CONFIG = {
     // ── WITNESS AT BIRTHS ────────────────────────────────────
     {
       id:    "witness_birth",
+      highlight_matched: false,
       label: "Сведкі — нараджэнне",
       icon:  "👁",
       sources: [
