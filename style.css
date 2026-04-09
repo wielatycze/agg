@@ -413,6 +413,12 @@ table.record-table td {
 table.record-table tbody tr:last-child td { border-bottom: none; }
 table.record-table tbody tr:hover { background: var(--surface2); }
 
+/* Dimmed /…/ content within cells */
+.cell-dim {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
 /* Matched row highlight — vivid */
 table.record-table tbody tr.matched-row {
   background: rgba(79,110,247,0.22);

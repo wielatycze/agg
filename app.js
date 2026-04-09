@@ -313,6 +313,29 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
   return wrap;
 }
 
+/**
+ * Render a cell value into a td, dimming any /…/ segments.
+ */
+function renderCellValue(td, val) {
+  if (!val || !val.includes('/')) {
+    td.textContent = val;
+    return;
+  }
+  // Split on /…/ groups, keeping the delimiters
+  const parts = val.split(/(\/[^/]*\/)/);
+  if (parts.length === 1) { td.textContent = val; return; }
+  parts.forEach(part => {
+    if (/^\/[^/]*\/$/.test(part)) {
+      const span = document.createElement('span');
+      span.className = 'cell-dim';
+      span.textContent = part;
+      td.appendChild(span);
+    } else if (part) {
+      td.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
 function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config) {
   const colMap = resolveColumnMap(source, config);
   const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
@@ -427,7 +450,8 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     // ── Data cells ──
     displayCols.forEach(col => {
       const td = tr.insertCell();
-      td.textContent = formatDisplayValue(row, col);
+      const val = formatDisplayValue(row, col);
+      renderCellValue(td, val);
     });
   });
 
