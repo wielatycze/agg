@@ -332,9 +332,6 @@ button#search-btn:active { transform: translateY(1px); }
 }
 
 .household-info {
-  position: sticky;
-  left: 0;
-  /* full width even when table is wider */
   box-sizing: border-box;
   text-align: center;
   padding: 0.6rem 1.25rem;
@@ -343,10 +340,6 @@ button#search-btn:active { transform: translateY(1px); }
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text);
-  /* comma-separated tokens, no individual spans needed */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   justify-content: center;
