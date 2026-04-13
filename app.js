@@ -424,11 +424,18 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     if (source.household_column) {
       const td = tr.insertCell();
       td.className = 'col-link';
-      // Find the person ID from any role column that has a value
+      // Find the person ID from any role column that has a value.
+      // Also try trimmed key variants to handle CSV whitespace issues.
       let personId = null;
       for (const { column } of source.roles) {
-        const val = normaliseId(row[column]);
-        if (val && val !== '') { personId = val; break; }
+        // Try exact key first, then scan all keys for a trimmed match
+        let val = normaliseId(row[column]);
+        if (!val) {
+          const trimmedCol = column.trim();
+          const matchedKey = Object.keys(row).find(k => k.trim() === trimmedCol);
+          if (matchedKey) val = normaliseId(row[matchedKey]);
+        }
+        if (val) { personId = val; break; }
       }
       if (personId) {
         const a = document.createElement('a');
@@ -467,6 +474,7 @@ function renderSection(section, results, config) {
 
   const div = document.createElement('div');
   div.className = 'result-section';
+  div.id = `section-${section.id}`;
 
   const header = document.createElement('div');
   header.className = 'section-header';
@@ -620,9 +628,10 @@ async function runSearch(personId) {
     const hasData = sectionResults.some(r => r !== null);
     if (hasData) totalFound++;
 
-    const pill = document.createElement('span');
+    const pill = document.createElement('a');
     pill.className = 'summary-pill' + (hasData ? ' has-data' : '');
     pill.textContent = `${section.icon} ${section.label}`;
+    pill.href = `#section-${section.id}`;
     summaryEl.appendChild(pill);
 
     const sectionEl = renderSection(section, sectionResults, config);
@@ -651,7 +660,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') runSearch(parseInt(input.value, 10));
   });
 
-  // Support ?id=1234 in the URL on load
+  // Scroll to top button
+  const scrollBtn = document.getElementById('scroll-top');
+  window.addEventListener('scroll', () => {
+    scrollBtn.classList.toggle('visible', window.scrollY > 400);
+  });
+  scrollBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
   const params = new URLSearchParams(window.location.search);
   const urlId  = parseInt(params.get('id'), 10);
   if (urlId > 0) {

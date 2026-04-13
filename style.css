@@ -234,12 +234,23 @@ button#search-btn:active { transform: translateY(1px); }
   font-weight: 500;
   padding: 0.2rem 0.7rem;
   color: var(--text-faint);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.summary-pill:hover {
+  border-color: var(--text-faint);
+  color: var(--text);
 }
 
 .summary-pill.has-data {
   background: var(--accent-soft);
   border-color: var(--accent-soft2);
   color: var(--accent);
+}
+.summary-pill.has-data:hover {
+  background: var(--accent-soft2);
+  border-color: var(--accent);
 }
 
 /* ─── Section Cards ─────────────────────────────────────── */
@@ -491,6 +502,35 @@ tr.household-gap td {
   border-bottom: 2px dashed var(--border);
   background: transparent !important;
 }
+
+/* ─── Scroll to top ─────────────────────────────────────── */
+#scroll-top {
+  position: fixed;
+  bottom: 1.75rem;
+  right: 1.75rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79,110,247,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 200;
+}
+#scroll-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+#scroll-top:hover { transform: translateY(-2px); }
+#scroll-top:active { transform: translateY(0); }
 
 /* ─── Utilities ─────────────────────────────────────────── */
 .hidden { display: none !important; }
