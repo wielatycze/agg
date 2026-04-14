@@ -558,6 +558,9 @@ async function runSearch(personId) {
     return;
   }
 
+  // Update URL without reloading the page
+  history.pushState(null, '', `?id=${personId}`);
+
   setLoading('Searching all sources…');
 
   const config = GENEALOGY_CONFIG;
