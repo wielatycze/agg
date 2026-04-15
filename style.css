@@ -167,6 +167,17 @@ button#search-btn:active { transform: translateY(1px); }
   margin-top: 0.6rem;
 }
 
+.cache-status {
+  font-size: 0.73rem;
+  color: var(--text-faint);
+  margin-top: 0.3rem;
+}
+.cache-status a {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 /* ─── Loading ───────────────────────────────────────────── */
 .loading-section { text-align: center; padding: 3rem 0; }
 

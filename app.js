@@ -3,7 +3,9 @@
 //  Do not edit unless you want to change behaviour.
 // ============================================================
 
-// ── Helpers ─────────────────────────────────────────────────
+// ── Module-level sheet cache ─────────────────────────────
+// Persists across searches so sheets are only fetched once per session.
+const SHEET_CACHE = {}; // cacheKey -> Promise<rows[]>
 
 /**
  * Fetch a Google Sheet tab as an array of row-objects.
@@ -567,9 +569,32 @@ async function runSearch(personId) {
   const resultsBody = document.getElementById('results-body');
   resultsBody.innerHTML = '';
 
-  // Fetch all tabs (deduplicated by sheetId+gid)
-  const fetchCache = {}; // key -> promise -> rows
+  // ── Collect all unique sources and fire fetches simultaneously ──
+  const allSources = config.sections.flatMap(s => s.sources);
+  const uniqueKeys = new Set();
 
+  for (const source of allSources) {
+    const { sheetId, gid } = resolveSourceSheetTab(source, config);
+    const key = `${sheetId}::${gid}`;
+    if (!uniqueKeys.has(key)) {
+      uniqueKeys.add(key);
+      // Only fetch if not already cached/in-flight
+      if (!SHEET_CACHE[key]) {
+        SHEET_CACHE[key] = fetchSheetTab(sheetId, gid)
+          .catch(err => { console.warn(`Error fetching ${key}:`, err); return []; });
+      }
+    }
+  }
+
+  // Wait for all fetches in parallel
+  const cachedCount = Object.keys(SHEET_CACHE).length - uniqueKeys.size + [...uniqueKeys].filter(k => SHEET_CACHE[k]).length;
+  const fromCache = [...uniqueKeys].every(k => SHEET_CACHE[k]);
+  setLoading(`Loading ${uniqueKeys.size} sources…`);
+  await Promise.all(Object.values(SHEET_CACHE));
+
+  // ── Now match and render ──
+  const totalSources = config.sections.reduce((n, s) => n + s.sources.length, 0);
+  let done = 0;
   const allSectionResults = [];
 
   for (const section of config.sections) {
@@ -577,54 +602,28 @@ async function runSearch(personId) {
 
     for (const source of section.sources) {
       const { sheetId, gid } = resolveSourceSheetTab(source, config);
-      const cacheKey = `${sheetId}::${gid}`;
-      if (!fetchCache[cacheKey]) {
-        fetchCache[cacheKey] = fetchSheetTab(sheetId, gid)
-          .catch(err => { console.warn(`Error fetching ${cacheKey}:`, err); return []; });
-      }
-    }
-
-    allSectionResults.push({ section, sectionResults, sources: section.sources });
-  }
-
-  // Now resolve all fetches (they are all in flight simultaneously)
-  const totalSources = config.sections.reduce((n, s) => n + s.sources.length, 0);
-  let done = 0;
-
-  for (const { section, sectionResults, sources } of allSectionResults) {
-    for (const source of sources) {
-      const { sheetId, gid } = resolveSourceSheetTab(source, config);
-      const cacheKey = `${sheetId}::${gid}`;
-      let allRows = await fetchCache[cacheKey];
+      const key = `${sheetId}::${gid}`;
+      let allRows = await SHEET_CACHE[key];
       done++;
-      setLoading(`Searching… (${done} / ${totalSources} sources)`);
+      setLoading(`Matching… (${done} / ${totalSources})`);
 
-      if (allRows.length === 0) {
-        sectionResults.push(null);
-        continue;
-      }
+      if (allRows.length === 0) { sectionResults.push(null); continue; }
 
-      // Apply column mapping if defined
       const colMap = resolveColumnMap(source, config);
-      if (colMap) {
-        allRows = renameColumns(allRows, colMap);
-      }
+      if (colMap) allRows = renameColumns(allRows, colMap);
 
       const match = matchSource(source, allRows, personId);
-      if (match) {
-        sectionResults.push({ ...match, allRows });
-      } else {
-        sectionResults.push(null);
-      }
+      sectionResults.push(match ? { ...match, allRows } : null);
     }
+
+    allSectionResults.push({ section, sectionResults });
   }
 
   hideLoading();
 
-  // Build summary pills + render sections
+  // ── Build summary pills + render sections ──
   const summaryEl = document.getElementById('results-summary');
   summaryEl.innerHTML = '';
-
   let totalFound = 0;
 
   for (const { section, sectionResults } of allSectionResults) {
@@ -643,6 +642,17 @@ async function runSearch(personId) {
 
   document.getElementById('results-id').textContent = `#${personId}`;
   document.getElementById('results').classList.remove('hidden');
+
+  // Update cache status
+  const statusEl = document.getElementById('cache-status');
+  if (statusEl) {
+    const n = Object.keys(SHEET_CACHE).length;
+    statusEl.innerHTML = `${n} source${n !== 1 ? 's' : ''} cached in memory — subsequent searches are instant. <a id="clear-cache">Clear cache</a>`;
+    document.getElementById('clear-cache')?.addEventListener('click', () => {
+      Object.keys(SHEET_CACHE).forEach(k => delete SHEET_CACHE[k]);
+      statusEl.textContent = 'Cache cleared — next search will re-fetch all sources.';
+    });
+  }
 
   if (totalFound === 0) {
     resultsBody.innerHTML = `<p class="section-empty" style="padding:1rem 0">No records found for person ID <strong>${personId}</strong> in any source.</p>`;
