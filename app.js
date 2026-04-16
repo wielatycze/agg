@@ -354,13 +354,13 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   // ── Colgroup: fixed widths per column type ──────────────
   const colgroup = document.createElement('colgroup');
   if (hasGid && !source.household_column) {
-    const col = document.createElement('col'); col.style.width = '32px'; colgroup.appendChild(col);
+    const col = document.createElement('col'); col.style.width = '36px'; colgroup.appendChild(col);
   }
   if (showRole) {
     const col = document.createElement('col'); col.style.width = '80px'; colgroup.appendChild(col);
   }
   if (source.household_column) {
-    const col = document.createElement('col'); col.style.width = '32px'; colgroup.appendChild(col);
+    const col = document.createElement('col'); col.style.width = '36px'; colgroup.appendChild(col);
   }
   displayCols.forEach(colSpec => {
     const col = document.createElement('col');
