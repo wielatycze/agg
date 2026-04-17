@@ -320,26 +320,52 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
 }
 
 /**
- * Render a cell value into a td, dimming any /…/ segments.
+ * Resolve the links map for a source (from config.columns or inline).
+ * Returns an object like { "имя отца": "#отца" } or null.
  */
-function renderCellValue(td, val) {
-  if (!val || !val.includes('/')) {
-    td.textContent = val;
-    return;
+function resolveLinks(source, config) {
+  if (source.links) return source.links;
+  if (typeof source.display_columns === 'string' && config.columns?.[source.display_columns]) {
+    return config.columns[source.display_columns].links ?? null;
   }
-  // Split on /…/ groups, keeping the delimiters
-  const parts = val.split(/(\/[^/]*\/)/);
-  if (parts.length === 1) { td.textContent = val; return; }
-  parts.forEach(part => {
-    if (/^\/[^/]*\/$/.test(part)) {
-      const span = document.createElement('span');
-      span.className = 'cell-dim';
-      span.textContent = part;
-      td.appendChild(span);
-    } else if (part) {
-      td.appendChild(document.createTextNode(part));
+  return null;
+}
+
+/**
+ * Render a cell value into a td, dimming any /…/ segments.
+ * If personId is provided and non-empty, wraps content in a link to ?id=personId.
+ */
+function renderCellValue(td, val, personId = null) {
+  // Build the inner content (with dimmed slashes)
+  const buildContent = (container) => {
+    if (!val || !val.includes('/')) {
+      container.appendChild(document.createTextNode(val || ''));
+      return;
     }
-  });
+    const parts = val.split(/(\/[^/]*\/)/);
+    if (parts.length === 1) { container.appendChild(document.createTextNode(val)); return; }
+    parts.forEach(part => {
+      if (/^\/[^/]*\/$/.test(part)) {
+        const span = document.createElement('span');
+        span.className = 'cell-dim';
+        span.textContent = part;
+        container.appendChild(span);
+      } else if (part) {
+        container.appendChild(document.createTextNode(part));
+      }
+    });
+  };
+
+  if (personId) {
+    const a = document.createElement('a');
+    a.href = `?id=${personId}`;
+    a.className = 'cell-person-link';
+    a.title = `Go to person #${personId}`;
+    buildContent(a);
+    td.appendChild(a);
+  } else {
+    buildContent(td);
+  }
 }
 
 function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config, highlightMatched = false) {
@@ -347,6 +373,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
   const showRole = resolveDisplayColumns(source, config, colMap).includes('_role_');
   const hasGid   = !!resolveSourceSheetTab(source, config).gid && hasLink;
+  const links     = resolveLinks(source, config); // { displayColName -> idColName }
 
   const table = document.createElement('table');
   table.className = 'record-table';
@@ -464,7 +491,11 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     displayCols.forEach(col => {
       const td = tr.insertCell();
       const val = formatDisplayValue(row, col);
-      renderCellValue(td, val);
+      // Check if this column has a linked ID column
+      const colLabel = typeof col === 'string' ? col : (col.label ?? '');
+      const idCol = links?.[colLabel];
+      const linkedId = idCol ? normaliseId(row[idCol]) : null;
+      renderCellValue(td, val, linkedId || null);
     });
   });
 

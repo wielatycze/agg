@@ -1,1144 +1,3 @@
-
-I have a bunch of google spreadsheets, most of which have multiple tabs. They mostly contain all kinds of genealogical data in Polish, Russian and Belarusian. Data is about births, marriages, death, cenuses, parishes lists, revisions etc. So it can be an event based (e.g. birth) data, or a list (e.g. all people on the parish or village or county etc). I've been trying to tie it in together for years, I have a big (17k+ people) family tree built, but it's not relevant here. I've been marking people in those sheets with unique IDs which can either be absent or a positive integer. What I've been wanting to do for years is to have a small website (preferably sth free on githubio or streamlit) where you can pass that unique ID into the link and get a page which sources the data from all those spreadsheets and displays all mentions of person with the said id in all documents (meaning tabs in all sheets). Logic will be different for each tab and Id column (e.g. if it's a tab about birth, a person can be born, or can be a mother, or a father, or a witness etc), but in each tab i can identify a column with ID for a given role
-
-that's high levelly my task, any ideas how to approach it?
-
-Show more
-Apr 6
-What a wonderful genealogy project! This is very doable. Let me think through the architecture with you.
-
-High-Level Approach
-The core idea is: Google Sheets as your database, GitHub Pages or Streamlit as your frontend, with a config file that defines the logic per tab.
-
-Here's how I'd structure it:
-
-1. Data Layer — Google Sheets (stay where you are)
-Keep your spreadsheets exactly as they are. You'll access them via the Google Sheets API (read-only, public sheets need no auth — just publish them). Each sheet URL + tab name + column mapping becomes an entry in a config file.
-
-2. Config File — the "brain" of the system
-A single config.json (or YAML) that you maintain, describing every tab across every spreadsheet:
-
-json
-{
-  "sources": [
-    {
-      "sheet_id": "1BxiMVs0XRA...",
-      "tab": "Births_Grodno",
-      "label": "Births – Grodno parish",
-      "type": "event",
-      "roles": [
-        { "column": "child_id",  "role": "Child" },
-        { "column": "father_id", "role": "Father" },
-        { "column": "mother_id", "role": "Mother" },
-        { "column": "witness1_id", "role": "Witness" }
-      ],
-      "display_columns": ["year", "date", "child_name", "father_name", "mother_name", "parish"]
-    },
-    {
-      "sheet_id": "1BxiMVs0XRA...",
-      "tab": "Census_1858",
-      "label": "Census 1858 – Minsk",
-      "type": "list",
-      "roles": [
-        { "column": "person_id", "role": "Listed person" }
-      ],
-      "display_columns": ["household", "name", "age", "status"]
-    }
-  ]
-}
-This means you never touch code when adding a new sheet — just add an entry to the config.
-
-3. Frontend options
-Option	Pros	Cons
-GitHub Pages (static HTML + JS)	Truly free, fast, no server, permanent URLs like yourname.github.io/tree?id=1234	Calls Sheets API directly from browser (need API key, but read-only public sheets are fine)
-Streamlit (Python)	Easier to write logic, nicer for data tables, handles auth better	Free tier sleeps after inactivity, slower cold start
-Streamlit Community Cloud	Still free, can use secrets for API keys	Same sleep issue
-My recommendation: GitHub Pages with vanilla JS. Your sheets can be made publicly readable, the URL pattern is clean, it never sleeps, and the whole thing is just static files — perfectly suited for a read-only lookup tool.
-
-4. Runtime flow
-User visits: yourname.github.io/tree?id=1234
-       ↓
-JS reads config.json
-       ↓
-For each source tab in config → fetch Google Sheet as CSV (or via Sheets API)
-       ↓
-Filter rows where ANY role column == 1234
-       ↓
-Render grouped results: one card per source, showing role + display columns
-Google Sheets has a neat trick — any published sheet can be fetched as CSV directly:
-
-https://docs.google.com/spreadsheets/d/SHEET_ID/gviz/tq?tqx=out:csv&sheet=TAB_NAME
-No API key needed if the sheet is set to "Anyone with the link can view."
-
-Suggested next steps
-Pick GitHub Pages — I can scaffold the full thing for you
-Start with 1-2 tabs to get the config pattern right, then expand
-You maintain only config.json as you add more sources over time
-The trickiest part will be the initial config authoring (mapping all your tabs), but the code itself is quite straightforward. Want me to build a working prototype — a complete GitHub Pages site with the config-driven lookup, sample config, and instructions for deploying it?
-
-let's try github pages
-
-small note, i want the output be grouped by source/event type. 
-
-e.g. first section : revision - we have revisions for 1811, 1816, 1834, 1850 and 1858 years. Different properties are stored in different sheets, different years - in different tabs. A person can be mentioned more than one time in the property (e.g if he moved houses), a person can move from one property (sheet) to another in the same or different years. Different tabs even in the same sheet can have different column names, and i don't want to display all of the data from the sheet, only selected data. Also, if a person is in the revision, i want to display not just the line where he is mentioned, but all lines for all memebers of his home (or homes)
-
-then: metrical books. 
-
-a separate section for birth - for when he was born (a records might be empty). Again, different sheets and different tabs with different schemas, but they should be displayed together and we don't want to display all columns
-
-a separate sections for marriage - all the time a person was married (same situation as with birth)
-
-a separate section for death - for when he or she died
-
-and then a separate section for witness - all the time he was a witness for someone else's birth or marriage
-
-Show more
-Apr 6
-This is a well-thought-out data model. Let me make sure I understand the grouping logic before building, because a few things need clarification.
-
-Let me ask all three questions at once properly:
-
-Good, three questions above — once you answer those I'll build the full prototype. While I wait, let me outline the config schema I have in mind so you can react to it:
-
-json
-{
-  "sections": [
-    {
-      "id": "revisions",
-      "label": "Revisions",
-      "sources": [
-        {
-          "sheet_id": "1BxiM...",
-          "tab": "1811",
-          "label": "Revision 1811 – Grodno district",
-          "household_column": "dom_nr",       ← the column that groups a household
-          "roles": [
-            { "column": "id", "role": "person" }
-          ],
-          "display_columns": ["nr", "imie", "nazwisko", "wiek", "uwagi"]
-        }
-      ]
-    },
-    {
-      "id": "births",
-      "label": "Births",
-      "sources": [ ... ]
-    }
-  ]
-}
-Each section (revisions / births / marriages / deaths / witness) groups multiple sources regardless of which sheet or tab they come from. The household_column tells the code how to expand a match to the full household block. If that column is absent, it just shows the matched row(s).
-
-Does this structure look right to you?
-
-Q: For revisions: when you say 'display all members of his home', how is household membership encoded in the sheet? Is there a shared household ID column, or do household members appear in consecutive rows, or something else?
-A: Shared household/property ID column
-
-Q: For the witness section — should it be split further (witness at birth vs witness at marriage), or grouped together as one 'Witness' section?
-A: Split: Witness at birth / Witness at marriage
-
-Q: How many Google Sheets files are we talking about roughly?
-A: 5-8 sheets with 30+ tabs in total
-
-Apr 6
-Perfect, that's everything I need. Let me build this now.
-
-
-Check frontend design skill
-Check frontend design skill
-Now let me build the full project — multiple files for a complete GitHub Pages site.
-
-
-Created 5 files, ran a command, read a file
-Created 5 files, ran a command, read a file
-Here's the complete site — 4 files, ready to deploy. Here's what you got and how it all fits together:
-
-What's included
-config.js — the only file you'll ever edit. It defines all six sections (Revisions, Births, Marriages, Deaths, Witness at Birth, Witness at Marriage), each with a list of sources. Per source you specify:
-
-sheet_id + tab — where the data lives
-household_column — for revisions: the column that groups a household; when someone is matched, all rows with the same household value are shown, with the matched person's rows highlighted
-roles — which ID columns to check, and what label to show (Child, Father, Witness 1, etc.)
-display_columns — only the columns you want visible; add "_role_" anywhere in the list to get a role badge column
-app.js — fetches all tabs in parallel (deduped, so the same tab used in two sections is only fetched once), matches IDs, expands households, and renders everything. Supports ?id=1234 in the URL for direct linking.
-
-To deploy
-Publish each sheet: File → Share → Publish to web (no API key needed — this is the gviz CSV trick)
-Fill in config.js: replace REPLACE_WITH_YOUR_SHEET_ID and the column names with your real ones
-Push all 4 files to a GitHub repo → Settings → Pages → Deploy from branch main
-Done: yourusername.github.io/reponame/?id=1234
-The README has the full step-by-step with a troubleshooting table. Want me to help you fill in the config for your first real sheet?
-
-
-Config
-JS 
-
-App
-JS 
-
-Index
-Code · HTML 
-
-Style
-Code · CSS 
-
-Readme
-Document · MD 
-can we open all of this in visual studio code or sth that can show a whole project?
-
-Apr 6
-Unfortunately I can't launch VS Code or any desktop application directly from here — I can only create and edit files in the container.
-
-But here are the easiest ways to get the project open locally:
-
-Option 1 — Download and open (quickest)
-
-Download the files I shared above one by one
-Put them all in a single folder
-Open VS Code → File → Open Folder → select that folder
-Option 2 — GitHub first, then clone (recommended since you're deploying there anyway)
-
-Create a new repo on github.com
-Upload the 4 files (index.html, style.css, app.js, config.js)
-In VS Code: Ctrl+Shift+P → "Git: Clone" → paste your repo URL
-You're set up for both editing and deploying in one go
-Option 3 — VS Code on the web (no install needed) Once the files are in a GitHub repo, just change the URL from github.com to github.dev and it opens a full VS Code editor in the browser — no download required.
-
-The files are all plain text so any of these routes gets you there in under 5 minutes. Want me to make any changes to the code or config in the meantime?
-
-what if i also want a link to the line in the tab and sheet for each event/person?
-
-Apr 6
-Great idea — Google Sheets supports deep links to specific rows. The link format is:
-
-https://docs.google.com/spreadsheets/d/SHEET_ID/edit#gid=GID&range=A5
-The tricky part is that the gid (numeric tab ID) is not the same as the tab name — it's a number you can't derive from the name alone. So we need one extra field per source in the config:
-
-js
-{
-  sheet_id: "1BxiM...",
-  tab:      "1858",
-  gid:      "0",          // ← add this
-  ...
-}
-You get the gid by clicking the tab in Google Sheets — it appears at the end of the URL: ...edit#gid=1234567890.
-
-Two questions before I update the code:
-
-Once you answer I'll update both app.js and config.js (to add the gid field to the source schema).
-
-Q: Where should the link appear?
-A: An icon/button on each row
-
-Q: For revisions where the full household is shown — link each row individually, or just one link for the whole household block?
-A: One link per household block
-
-Apr 6
-Perfect. I'll add a gid field to the config and update the rendering to show a small link icon per row (or per household block for revisions).
-
-
-Viewed a file, edited a file
-Viewed a file, edited a file
-Now add the link styles to the CSS:
-
-
-Add link icon styles
-Add link icon styles
-Now update config.js to add gid to all source entries and document it:
-
-
-Add gid field documentation and to all source examples
-Add gid field documentation and to all source examples
-Now add gid: null to every source example in config.js:
-
-
-Edited 7 files, viewed a file
-Edited 7 files, viewed a file
-Now add gid to the marriages, deaths, and witness sources:
-
-
-Edited 2 files, viewed a file, ran a command
-Edited 2 files, viewed a file, ran a command
-Three files updated. Here's what changed:
-
-In config.js — every source now has a gid field:
-
-js
-gid: null,   // replace with e.g. "0" or "1837492810"
-To find the gid: open your sheet, click the tab, look at the URL — it ends with #gid=1234567890. That number is what goes here. Leave it null for any tab where you don't have it yet — the link icon simply won't appear.
-
-In app.js — the link logic:
-
-Non-revision rows: every row gets a small ↗ icon that opens ...edit#gid=GID&range=A{row}
-Revision rows: only the first matched person's row in each household block gets the link (since the household might span 10+ rows, one link per block is cleaner)
-In style.css — the ↗ icon is a small bordered button that turns blue on hover, sitting in a narrow column before the data.
-
-
-App
-JS 
-
-Config
-JS 
-
-Style
-Code · CSS 
-https://YOUR_USERNAME.github.io/genealogy/?id=1234
-
-does path after github.io (e.g. genealogy here) must match repo name or is it customizable?
-
-Apr 6
-It must match the repo name — that part is not customizable for regular GitHub Pages.
-
-The full URL is always:
-
-https://YOUR_USERNAME.github.io/REPO_NAME/
-The one exception: if you name the repo exactly YOUR_USERNAME.github.io, it becomes your root site and the URL is just https://YOUR_USERNAME.github.io/ with no path. That's a common choice for a personal homepage, and it would make your links cleaner:
-
-https://YOUR_USERNAME.github.io/?id=1234
-But you can only have one root site per account, so if you're already using that slot for something else, just pick a repo name you like (e.g. genealogy, family-records, metrika) and that becomes the path.
-
-can i send you my config so that you know the actual values when you modify it?
-
-Apr 6
-Yes, absolutely — just paste it directly into the chat (or upload the file) and I'll use the real values from that point on.
-
-
-// ============================================================ // GENEALOGY SITE — CONFIG FILE // Edit this file to add/remove/modify data sources. // You do NOT need to touch index.html, style.css, or app.js. // ============================================================ const GENEALOGY
-
-pasted
-
-Apr 6
-Got it, I have your real config now. A few things I notice:
-
-Births — the "Р/Велятичи пр" tab has "отчество отца" listed twice in display_columns — probably one of those should be "отчество матери"?
-Marriages — the display_columns still have placeholder names ("1", "2", "dd", "mm", "parafia" etc.) — I'm guessing you haven't filled those in yet, and the gid is also null.
-Deaths / Witness sections — still fully placeholder, which makes sense if you haven't digitised those yet.
-Revisions — the role column is "#" — just want to confirm: is that literally the column header in your sheet, a single hash character?
-Births witness — your birth tabs have "крестный 1" and "крестный 2" (godparents) in display_columns but no corresponding role columns defined. Do you want to add godparent roles to the witness_birth section pointing at those same birth tabs? Or are godparents tracked differently?
-Answer whichever of these you can and I'll update the config accordingly — and leave the placeholder sections untouched until you have real data for them.
-
-Changes:
-
-Only revisions have and should have household_column
-Apr 6
-Got it — simple change, removing household_column from births and marriages (and leaving the placeholder sections as-is since they're not real yet).
-
-
-Read current config to make precise edits
-Read current config to make precise edits
-Claude's response was interrupted
-Changes:
-* Only revisions have and should have household_column
-* Marriages shouldn't have         { column: "id_ojca_pana",      role: "Groom's Father" },
-            { column: "id_matki_pana",     role: "Groom's Mother" },
-            { column: "id_ojca_panny",     role: "Bride's Father" },
-            { column: "id_matki_panny",    role: "Bride's Mother" }. We have the bride, the groom, and 3 witnesses
-* Do we need to specify tab name if we have gid?
-* For UI: we need to separately display birth of the person and birth of his/her children, not everything at once
-* Also, i don't have separate witness tabs/sheets, it's the same birth/marriage tabs only witness have separate ids
-
-Apr 6
-Great set of changes. Let me answer your question first:
-
-Do we need tab name if we have gid? Unfortunately yes — the CSV fetch URL uses the tab name, not the gid. The gid is only used for the deep-link back to Sheets. So both are needed.
-
-Now the design questions before I update:
-
-Birth split — "birth of the person" vs "birth of their children" means the same tab, same columns, but different role columns matched:
-
-"Born" section → matched via #ребенка
-"Children born" section → matched via #отца or #матери
-Does that sound right? And should these be two separate sections on the page (like "📜 Birth record" and "👶 Children — birth records"), or one section with two subsections?
-
-Witnesses — since they live in the same tabs as births/marriages, each source entry will appear in multiple sections with different role columns. For example the "Р/Велятичи ун" tab would appear in:
-
-Births (child/father/mother roles)
-Witness at births (godparent/witness roles)
-That works fine with the current architecture — same sheet_id + tab, different roles and display_columns. But I need to know: what are the actual column names for witnesses in your marriage tab, and for godparents in your birth tabs? I can see "крестный 1" and "крестный 2" in the birth display columns — are those also the ID columns, or are the ID columns named differently (like #крестный1)?
-
-Does that sound right? And should these be two separate sections on the page (like "📜 Birth record" and "👶 Children — birth records")
-2 separate sections, first display birth records, than marriage, than children
-
-For Р/Велятичи ун it's "#крестный 1" and "#крестный 2"
-For Б/Велятичи ун it's #свидетель1#свидетель2#свидетель3
-
-Apr 6
-Perfect, that's everything I need. Let me rewrite the config now with all real values.
-
-
-Ran 2 commands, created a file, read a file
-Ran 2 commands, created a file, read a file
-Here's what changed:
-
-Sections — now 7 sections in this order: Revisions → Birth → Marriages → Children's births → Deaths → Witness at births → Witness at marriages. The children_births section is new, using #отца / #матери on the same birth tabs.
-
-Roles cleaned up — marriages now only have Жаніх / Нявеста. Witness columns use your real names: #крестный 1, #крестный 2 for births, and #свидетель1/2/3 for marriages.
-
-household_column: null on every non-revision source.
-
-Two things still pending in the config (marked with comments):
-
-The marriage display_columns still have placeholder names ("1", "2", "dd" etc.) — send me the real column headers when you have them
-Godparent ID columns for Р/Велятичи пр (the Orthodox birth tab) — add when known
-
-Config
-JS 
-
-// ============================================================ // GENEALOGY SITE — APP LOGIC // Do not edit unless you want to change behaviour. // ============================================================ // ── Helpers ───────────────────────────────────────────────── /** * Fetch a
-
-pasted
-
-will you were resting i fixed an issue, here is updated app.js
-
-Apr 6
-Got it, I've updated my copy to match yours.
-
-
-Sync uploaded app.js into working directory
-Sync uploaded app.js into working directory
-What was the issue you fixed? Good to know so I don't accidentally reintroduce it in future edits.
-
-url is using gid instead of tab name and different endpoint because it was ignoring columns with ciryllics due to a known bug
-
-Apr 6
-Smart fix — the gviz endpoint has well-known issues with non-ASCII column headers. Which endpoint are you using now instead?
-
-
-// ============================================================ // GENEALOGY SITE — APP LOGIC // Do not edit unless you want to change behaviour. // ============================================================ // ── Helpers ───────────────────────────────────────────────── /** * Fetch a
-
-pasted
-
-oh sorry i sent you the wrong version, here is the correct one
-
-Apr 6
-Got it — switched to /export?format=csv&gid= instead of the gviz endpoint. Syncing my copy now.
-
-
-Ran 2 commands
-Ran 2 commands
-No file in uploads — it came through as pasted text only. I'll write it directly from the document you shared.
-
-
-Ran 2 commands
-Ran 2 commands
-Synced. The key change is fetchSheetTab now takes gid instead of tabName and hits /export?format=csv&gid= — which serves proper UTF-8 and handles Cyrillic headers correctly. The tab field in the config is now only used as the dedup cache key, not in the fetch URL itself.
-
-One consequence worth noting: any source with gid: null (like the marriage tab) will silently return empty results since the fetch URL becomes .../export?format=csv&gid=null. You'll want to fill in those gids before testing those sections.
-
-
-// ============================================================ // GENEALOGY SITE — CONFIG FILE // Edit this file to add/remove/modify data sources. // You do NOT need to touch index.html, style.css, or app.js. // ============================================================ const GENEALOGY
-
-pasted
-
-latest config:
-
-Apr 6
-Got it, syncing now. I notice the witness at marriages section got removed entirely — intentional for now?
-
-
-Ran 2 commands, read a file
-Ran 2 commands, read a file
-Synced. I also kept the witness_marriage section as an empty placeholder (it was cut off in your paste) — let me know if you wanted it gone entirely for now.
-
-Also noting: gid: 0 on Р/Велятичи пр is the first tab's default gid in Google Sheets, so that should work fine with the /export endpoint. Just worth double-checking it's actually 0 and not a different value in your sheet URL.
-
-
-Config
-JS 
-1775510955489_4.Dashboard Table Redesig.png
-can we modiy ui to be closer to this than the current 2010-like veriosn?
-
-Apr 6
-Ha, fair critique! Let me redesign the UI to match that clean, modern dashboard aesthetic — card-based rows, soft shadows, clean sans-serif, light background.
-
-
-Viewed a file, created a file, ran a command
-Viewed a file, created a file, ran a command
-Now update index.html to load Inter font and adjust the header ornament to be the tree emoji:
-
-
-Edited 2 files, ran a command, read a file
-Edited 2 files, ran a command, read a file
-Complete redesign. What changed:
-
-Background: light blue-grey (
-#f0f2f8) instead of parchment
-Cards: white surfaces with soft shadows and 12px rounded corners — sections are now self-contained cards
-Header: sticky top bar with an accent-coloured icon badge, clean sans-serif
-Typography: Inter instead of the old serif fonts — same weight hierarchy, much cleaner
-Accent colour: blue (
-#4f6ef7) throughout — search button, matched row highlights, role badges, link icon hover, summary pills
-Tables: tighter, more data-dense, with the same column/header pattern but much lighter borders
-Matched rows: subtle blue tint instead of the brownish highlight
-The parchment aesthetic was thematically fitting for genealogy but you're right that usability-wise the dashboard style is much easier to scan through a lot of records.
-
-
-Style
-Code · CSS 
-
-Index
-Code · HTML 
-good! like this better
-
-but
-
-we're also now displaying household information before each revision and it looks really out of style (i am attaching current config and app.js)
-i want a more explicit separation between revision. the header has really dull colors and is glued to the previous revision
-Apr 6
-Can you share the current app.js and config? I want to see exactly what changed before touching anything.
-
-
-app.js
-js
-
-
-config.js
-303 lines
-
-js
-
-also, column width is all out of place. and the tables take like 70 pecrent of page space and don't nearly fit
-
-Apr 6
-Got it, I can see the full picture now. Let me sync both files and then fix all three issues:
-
-Household info display — style it to look like a proper card header, not a raw row
-Revision separation — add a visible divider/gap with a more prominent label between revisions
-Table column widths — constrain the layout and let the table scroll horizontally rather than squishing
-
-Viewed 2 files, ran a command
-Viewed 2 files, ran a command
-Good, now I have the full picture. The household info is rendered as a plain <p class="household-info"> with no styling. I need to:
-
-Style .household-info as a proper pill/badge bar
-Style .household-section with a top border/gap to separate revisions visually
-Style .source-group for revisions with more prominent separation
-Fix table overflow — add white-space: nowrap to cells and proper min-width so it scrolls rather than squishes
-
-Replace the source-group, household, and table sections with improved styling
-Replace the source-group, household, and table sections with improved styling
-Now update app.js to render household info as individual <span> tokens instead of a plain text paragraph:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Three things changed:
-
-Household info — instead of a plain <p> with comma-separated text, each token (тип, н.п., хата №5) now renders as its own pill badge — white background, border, rounded. The ↗ link sits at the end of the row. Looks like metadata tags rather than raw text.
-
-Revision separation — the .source-label (the revision year header) is now a solid accent-blue bar with white text — much more prominent. Each household block within a revision is separated by a 2px border. So the visual hierarchy is: blue header → household pill row → person table rows.
-
-Tables — white-space: nowrap on all td and th elements, plus -webkit-overflow-scrolling: touch on the wrapper, so the table scrolls horizontally at its natural width rather than squishing columns together.
-
-
-Style
-Code · CSS 
-
-App
-JS 
-ok, better now with the colors. 
-
-still want a more explicit break between revisions, add some space
-don't like how household info is displayed. it's like a header itself, not some dull pills
-the tables are not wide enough
-also, some tables columns width doesn't make sense. like age columns - yes, the column name is a mothful and long, but the values are like numbers, it doesn't have to be that wide
-Apr 6
-Let me fix all four issues together.
-
-
-Viewed 2 files, edited a file
-Viewed 2 files, edited a file
-Now update app.js to mark numeric/short columns with width: 1% inline and text columns with the col-text class, based on column type:
-
-
-Add col-text class to text cells so they get natural width, numeric/short cells stay tight
-Add col-text class to text cells so they get natural width, numeric/short cells stay tight
-Also wrap the source-group's table in the record-table-wrap properly — currently it's appended directly. Let me check:
-
-
-Viewed 2 files
-Viewed 2 files
-Good — renderTable already returns a div.record-table-wrap, so that's correct. Now also wrap the section card div so source-groups have proper padding/border:
-
-
-Wrap source groups in a padded inner container inside the section card
-Wrap source groups in a padded inner container inside the section card
-Also add padding inside the section card so source-groups don't bleed to the edges:
-
-
-Add padding inside result-section for source groups
-Add padding inside result-section for source groups
-Now wrap source groups in that body div in app.js:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Here's what changed across the four issues:
-
-Revision separation — source groups now have margin-top: 1.5rem between them, plus the blue label bar has rounded top corners so each revision reads as its own self-contained card floating inside the section. The 3px solid background-coloured border between household blocks gives a clear break without being noisy.
-
-Household info — dropped the pills entirely. Now it's a light blue-tinted bar (
-#eef1fd) with bold text, baseline-aligned, similar to a subheading. Each token (тип, н.п., хата №5) sits as plain bold text separated by space — reads like a record header, not metadata tags.
-
-Table width — switched to width: max-content; min-width: 100% so the table expands to its natural content width and the wrapper scrolls horizontally. No more squishing.
-
-Column widths — data cells now default to width: 1% (tight, content-driven). Cells whose column name matches возраст|№|год|день|месяц|лист or whose value is purely numeric stay tight. Everything else gets col-text class with min-width: 120px; max-width: 260px; white-space: normal — so name/comment columns breathe but age/number columns stay compact.
-
-
-Style
-Code · CSS 
-
-App
-JS 
-better now with separation
-
-but
-
-still don't like house hold information dispaly. maybe comma-separate it and center. now when i scroll to the right info disappears, and block ends halfway
-still bad with table width. TABLES TAKE LIKE 60 PERCENT OF THE PAGE. why all the empty space around, use it
-still bad with column width. make the column width match the content, wrap the column names if needed
-Apr 7
-Let me look at the current state of the CSS carefully before making changes.
-
-
-Read full current style.css
-Read full current style.css
-I see all three root causes clearly now:
-
-Table width — result-section-body has padding: 1.25rem 1.5rem and the tableWrap gets inline border/radius styles added in JS — this all eats into width. Tables need to break out of the padding entirely.
-Household info — needs position: sticky; left: 0 so it stays visible when scrolling, and comma-separated plain text centered.
-Column widths — th has white-space: nowrap which forces headers wide; need to allow wrapping on headers while keeping values tight.
-
-Edited 2 files
-Edited 2 files
-Now fix the JS: household info as comma-separated plain text (no individual spans needed for layout), remove inline styles on tableWrap, and remove the col-text logic since table-layout: fixed + column width set via <col> elements is the right approach:
-
-
-Household info: render as comma-separated plain text span, not individual spans per token
-Household info: render as comma-separated plain text span, not individual spans per token
-Now fix the renderSection — remove inline styles on tableWrap, they fight the CSS:
-
-
-Remove inline styles on tableWrap that were fighting CSS
-Remove inline styles on tableWrap that were fighting CSS
-Now fix the data cell rendering — remove col-text logic, instead inject <colgroup> with explicit widths based on content type:
-
-
-Replace col-text approach with colgroup explicit widths per column type
-Replace col-text approach with colgroup explicit widths per column type
-Now add a <colgroup> to createPersonTable so column widths are set explicitly by content type:
-
-
-Viewed a file, edited a file, ran a command
-Viewed a file, edited a file, ran a command
-Three targeted fixes:
-
-Household info — now a single position: sticky; left: 0 bar with comma-separated text centered. Because it's sticky horizontally, it stays pinned to the left edge while the table scrolls right — you won't lose it. The ↗ link sits to the right of the text.
-
-Table width — removed the result-section-body padding problem by using negative margins on .source-group to break out of the padding. Removed the inline border/radius styles from JS that were creating invisible constraints. Tables now use width: 100% with table-layout: fixed + explicit <colgroup> widths, so they fill the full card.
-
-Column widths — instead of CSS guessing, the JS now injects a <colgroup> before the table renders, assigning widths by column name pattern: age/year/day/month/№/page → 52px; тип/пометка/изменения → 70px; родство → 90px; комментарии → 200px; names/places → 120px. Header text is now allowed to wrap (white-space: normal) so a long header like "возраст на прошлую" wraps into 2 lines over a 52px column rather than forcing the column wide.
-
-
-Style
-Code · CSS 
-
-App
-JS 
-1775578806738_image.png
-better now, but in no way i want actual data in the tables to be shortned or showed partially
-
-the table still takes like 70% of the page width
-
-Apr 7
-I can see the issues clearly from the screenshot:
-
-Data truncated — text-overflow: ellipsis on td is cutting off values like "помер 1...", "/с доб. 1...", "он же Никитин в РС 1816, Ахре..." — that needs to go entirely
-Table width — the card itself is only ~70% of the page. The max-width: 1100px on main combined with the page margins is leaving huge gaps on both sides, especially visible on a wide screen
-
-Edited 3 files
-Edited 3 files
-And since we're removing truncation, switch back to table-layout: auto so columns size to their actual content rather than fixed widths that were causing the overflow in the first place:
-
-
-Switch to auto table layout so columns size to content naturally
-Switch to auto table layout so columns size to content naturally
-And remove the <colgroup> injection from app.js since it only makes sense with table-layout: fixed:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Three clean fixes:
-
-No truncation — removed overflow: hidden and text-overflow: ellipsis from td entirely. Every value shows in full. The table scrolls horizontally if needed.
-
-Table width — bumped max-width from 1100px to 1600px on both main and .header-inner. On a typical 1920px monitor this fills most of the screen. On narrower screens it still fills 100%.
-
-Column widths — dropped the colgroup fixed-width approach and switched back to table-layout: auto, which lets the browser measure actual cell content and size each column to fit. Headers are allowed to wrap (white-space: normal) so a long header like "возраст на прошлую" wraps to 2 lines over a narrow column rather than blowing it out.
-
-
-Style
-Code · CSS 
-
-App
-JS 
-can we limit that the column width should not be less than like 4 letters and not greater than 100?
-
-also, i don't like the highlight of the person with id in the household, it's barely visible
-
-also, i would like a column with a link to the page for a person for each person in the revision
-
-Apr 7
-Let me check the current matched row color and link logic first.
-
-
-Viewed 3 files
-Viewed 3 files
-Good picture. Now I can see all three issues clearly:
-
-createPersonTable is called with hasLink = false for household tables — so links per row are disabled. Need to re-enable them always.
-Matched row highlight is rgba(79,110,247,0.06) — very subtle. Need something more visible.
-Column min/max width needs CSS constraints.
-
-Strengthen matched row highlight and add min/max column width to th and td
-Strengthen matched row highlight and add min/max column width to th and td
-Now fix the JS — pass hasLink = true for household tables so every row gets its own link:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Three changes:
-
-Column min/max width — both th and td now have min-width: 2.5rem (~4 characters) and max-width: 100px. The browser uses table-layout: auto to fit content within those bounds, scrolling horizontally when needed.
-
-Matched row highlight — changed from a barely-visible 6% blue tint to a solid 12% blue background plus a 3px solid accent-coloured left border via box-shadow: inset 3px 0 0 var(--accent) on the first cell. Much harder to miss.
-
-Per-row links in revisions — was calling createPersonTable(..., hasLink = false, ...) for household tables, which suppressed the link column entirely. Changed to true so every person row in a revision now gets its own ↗ link pointing directly to that row in the sheet.
-
-
-Style
-Code · CSS 
-
-App
-JS 
-you didn't understand me, i don't want a link to google doc per person in revision, i want a link to the same website but for each person e.g. ?id=1234
-
-Apr 8
-Got it — an internal link to the person's own page on the site, using whatever ID is in the # column.
-
-
-Add internal person link cell after the sheet link cell in household table rows
-Add internal person link cell after the sheet link cell in household table rows
-Also need to add the extra header th for this column:
-
-
-Add header th for the internal person link column in revision tables
-Add header th for the internal person link column in revision tables
-Now add a distinct style for the person link so it's visually different from the sheet link:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Each revision row now has two icon buttons in separate narrow columns:
-
-↗ (grey) — opens the row in Google Sheets, same as before
-# (blue) — navigates to ?id=XXXX on the same site, where XXXX is the value from the # column for that person. Rows without an ID in that column get an empty cell.
-The # link only appears in revision tables (detected via source.household_column), not in births/marriages/deaths since those sections already show the person's own record.
-
-
-App
-JS 
-
-Style
-Code · CSS 
-i don't want a link to google doc per each person in revision, we already have a link to household in the header
-
-You also broke the column width (again). text is overflowing instead of wrapping, age columns are also wide as hell when we agreed they shouldn't be wider than 4 chars etc
-
-Apr 9
-Got it — removing the sheet link column from revision rows entirely (keep only the household header link), and fixing column widths properly this time. The core issue is white-space: nowrap on td fights max-width — they can't both win. I need to allow wrapping on data cells and let max-width actually clamp.
-
-
-Edited 2 files
-Edited 2 files
-Now fix column widths properly — the trick is table-layout: auto + max-width on td doesn't work because auto ignores max-width. The correct approach is table-layout: fixed with a <colgroup> that sets widths, and white-space: normal + word-break on cells so they wrap within those widths:
-
-
-Fix table column width approach - fixed layout with colgroup, wrapping cells
-Fix table column width approach - fixed layout with colgroup, wrapping cells
-Now add the colgroup back to createPersonTable with proper widths — this is the only reliable way to control column widths with table-layout: fixed:
-
-
-Edited 2 files, viewed a file, ran a command
-Edited 2 files, viewed a file, ran a command
-Here's what actually changed and why it should stick this time:
-
-Sheet link removed from revision rows — ↗ only appears for non-revision sources (births, marriages etc). Revisions keep only the household header link + the # person link per row.
-
-Column widths — done properly — switched to table-layout: fixed (the only mode where column widths are actually respected) paired with a <colgroup> injected in JS. Explicit widths by pattern: age/day/month/page → 40px; тип/пометка → 55px; изменения → 65px; родство/отчество/имя/фамилия → 80–90px; комментарии → 160px. The CSS then allows white-space: normal + word-break: break-word so long headers wrap within the fixed width rather than blowing out the column.
-
-
-App
-JS 
-
-Style
-Code · CSS 
-person with provided id in household should be highlighted more bright
-
-if a person is mentioned multiple time in the revision in multiple houses, there should be some visible break between the houses
-
-Apr 9
-
-Edited 2 files
-Edited 2 files
-Also need to remove the bottom border from .source-group wrapping so the household cards don't get double borders, and give the table-wrap inside a household its own border handling:
-
-
-Viewed 2 files
-Viewed 2 files
-Good — the wrap has no border itself, so the household-section border will contain it cleanly. Now also update the record-table-wrap inside a household so the last row's border doesn't double up with the container:
-
-
-Ran a command, read a file
-Ran a command, read a file
-Two changes, CSS only:
-
-Matched row — bumped background to 22% opacity blue, added font-weight: 600 on all cells so the text itself is bolder, and thickened the left accent border to 4px. Should be unmissable now.
-
-Household separation — each .household-section is now its own card: margin-top: 1.25rem, a full border, rounded corners, and a subtle shadow. So when a person appears in two different houses in the same revision year, you see two clearly separated cards rather than a faint divider line.
-
-
-Style
-Code · CSS 
-some cells contain values between / / . It can be either a full cell, e.g. "/test/", or partially e.g. "a /test/ b". Whatever is between // including // should be of a much duller color
-
-Apr 9
-Clean text-rendering change — need to update the cell rendering in JS to split on /…/ patterns and wrap the matched parts in a styled span.
-
-
-Replace plain textContent assignment with rich rendering that dims /…/ patterns
-Replace plain textContent assignment with rich rendering that dims /…/ patterns
-Now add the renderCellValue function just above createPersonTable:
-
-
-Add renderCellValue helper that dims slash-wrapped segments
-Add renderCellValue helper that dims slash-wrapped segments
-Now add the CSS class:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-renderCellValue splits any cell value on the regex /(\/[^/]*\/)/  — matches anything wrapped in /.../. Each matched segment gets a <span class="cell-dim"> (faint grey + italic), everything else stays normal text. Works for both full-cell cases like /Мельник/ and mixed cases like сын /Василиева/.
-
-
-App
-JS 
-
-Style
-Code · CSS 
-a row should only be highlighted in revisions, not in metrics (the person is present in all metrical records by default). or better make it parameterizible in config - wether to highlight it or not
-
-Apr 9
-Good call. Let me add a highlight_matched flag to the section config.
-
-
-Add highlight_matched flag to revisions section, set false for others
-Add highlight_matched flag to revisions section, set false for others
-Now add it to the other sections (all false by default):
-
-
-Add highlight_matched: false to all non-revision sections
-Add highlight_matched: false to all non-revision sections
-Now update app.js to pass the flag through and only apply matched-row class when it's true:
-
-
-Pass highlight_matched from section into renderTable and createPersonTable
-Pass highlight_matched from section into renderTable and createPersonTable
-Now update renderTable and createPersonTable signatures to accept and use the flag:
-
-
-Update renderTable signature to accept highlightMatched
-Update renderTable signature to accept highlightMatched
-Now find where createPersonTable is called inside renderTable and pass the flag:
-
-
-Edited 2 files, viewed a file
-Edited 2 files, viewed a file
-Now update createPersonTable signature and use the flag when applying the class:
-
-
-Edited 2 files, ran a command, read a file
-Edited 2 files, ran a command, read a file
-The flag is highlight_matched on the section object in config.js:
-
-js
-{ id: "revisions", highlight_matched: true,  … }  // ← highlights matched rows
-{ id: "births",    highlight_matched: false,  … }  // ← no highlight (default)
-It defaults to false if omitted, so new sections you add in future won't highlight unless you explicitly set it. The flag flows from section → renderTable → createPersonTable → the matched-row class assignment.
-
-
-App
-JS 
-
-Config
-JS 
-births and marriages should be sorted by year ascending
-
-Apr 9
-Small change — sort displayIndices by the year column before rendering, for non-household sources.
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Sorts by the год column (falls back to year if that's what a future tab uses) ascending. Revisions are unaffected since they go through the household path. Rows with no year value sort to the top (parse as 0).
-
-
-App
-JS 
-and now the revision table is unscroallabe to the left on mobile (while only like third of the table is shown)
-
-Apr 9
-The issue is position: sticky; left: 0 on .household-info — it anchors to the viewport left, but the table wrapper scrolls independently, so when you scroll right the header stays glued while the table moves, and scrolling back left is broken. Just remove sticky from household-info.
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Removed position: sticky; left: 0 and the white-space: nowrap; overflow: hidden; text-overflow: ellipsis that went with it. The household info bar now scrolls naturally with the rest of the card, so the table can be scrolled all the way left and right freely on mobile.
-
-
-Style
-Code · CSS 
-can summary-pills be clickable and jump you to the right section?
-
-Apr 11
-Each section card already has an id on it from the config — just need to anchor the pills to it.
-
-
-Viewed 2 files
-Viewed 2 files
-The section div has no id yet. Two quick changes — add id to the section div, and make pills <a> tags:
-
-
-Edited 2 files
-Edited 2 files
-And make the pill style work as a link:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Each section card now gets id="section-revisions" etc., and the pills are <a href="#section-revisions"> links. Clicking a pill scrolls smoothly to that section (smooth scroll is already set on html in the CSS). Pills without data are still clickable but scroll to the "no records found" card. Hover state added for both variants.
-
-
-App
-JS 
-
-Style
-Code · CSS 
-1776011963254_image.png
-why some people in revisions don't have a link button? they have an # in google doc
-
-Apr 12
-The issue is that rows without an ID in the # column get skipped — but looking at the screenshot, the missing ones seem to be rows where the person's # column is empty because they're dependents (wives, daughters) whose ID wasn't assigned, while the # button only appears when personId is non-empty. That part is correct.
-
-But the arrows point to rows that should have a # — let me check the exact condition. The current code reads the ID from source.roles columns, but only takes the first non-empty value. The issue is likely that some rows have their ID in the # column but the column name has a trailing space or the value is 0 which is falsy.
-
-
-Find the internal person link cell rendering code
-Find the internal person link cell rendering code
-I see it — if (val && val !== '') will skip "0" since "0" is falsy... actually no, "0" as a string is truthy. The real issue is more likely that row[column] returns undefined because the column name in the sheet has a slightly different key (e.g. trailing whitespace after CSV parsing). But looking at the screenshot more carefully — the missing rows are exactly the ones where родство wraps to two lines. That's a red herring. The actual pattern is: rows without # are those where the person has no assigned ID in your sheet — wives and daughters without IDs. The arrows seem to point to rows that do have a # button actually.
-
-Can you confirm — do those specific people (Кузьмы Кириллова сын 3-ий, сын 4-ый, Ивана Кузьмина жена) actually have an ID number in the # column in your Google Sheet? If they do, the bug is in column name matching. Let me add a fallback that also checks a trimmed version of the column name:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-The lookup now tries the exact column name first, then scans all row keys with .trim() comparison to catch any whitespace that crept in during CSV parsing. But before testing — can you open one of the affected rows in your sheet and confirm those people actually have a number in the # column? If they genuinely have no ID assigned, the empty cell is correct behaviour and the arrows in your screenshot are pointing at something else.
-
-
-App
-JS 
-ok disgregard the last reqest
-
-what about adding a some sort of scroll to top button
-
-and also make those pills in the top that say revisions birth marriages etc clickable so they scroll to the section in question
-
-Apr 12
-The pills are already clickable and scroll to sections — that was done a few messages ago. Maybe they're not working because the site hasn't been redeployed yet?
-
-For the scroll-to-top button, small addition:
-
-
-Edited 3 files, ran a command, read a file
-Edited 3 files, ran a command, read a file
-A fixed blue circle ↑ button appears in the bottom-right corner once you've scrolled down more than 400px, fades in/out smoothly, and clicking it scrolls back to the top. That's all three files updated.
-
-
-Index
-Code · HTML 
-
-Style
-Code · CSS 
-
-App
-JS 
-if i enter sth in the person id search box and click enter relative url should change to contain that id
-
-1:46 AM
-One-liner addition to the search handler:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-history.pushState updates the URL to ?id=1234 without a page reload. The back button will also work correctly — going back restores the previous URL, though it won't re-run the search automatically (that would need a popstate listener, let me know if you want that too).
-
-
-App
-JS 
-is there any way to speedup/optimize the setup? we just started and have just a bunch of sources and it already takes some time to display info for one person
-
-11:21 PM
-A few things are happening that slow it down:
-
-The main bottleneck: every search re-fetches all sheets from Google every time, even if you searched 5 seconds ago. The sheets don't change mid-session, so caching them in memory across searches is the biggest win.
-
-Other issues: fetches are fired in parallel per section but awaited sequentially across sections — so section 2's fetch doesn't start until section 1 is done resolving.
-
-Here's what I'd do in order of impact:
-
-1. In-memory cache across searches (biggest win) Right now fetchCache is a local variable inside runSearch — it's thrown away after each search. Moving it to module scope means the second search for any person is near-instant since all sheet data is already in memory.
-
-2. Fire ALL fetches simultaneously before processing any Currently fetches are kicked off section by section in a loop. We should collect all unique sheet+gid combinations upfront and fire them all at once with Promise.all.
-
-3. Lazy CSV parse — parse once, cache parsed rows Currently every search re-parses the CSV even if we cached the raw text. Cache the parsed rows instead.
-
-Let me implement all three:
-
-
-Edited 2 files
-Edited 2 files
-Now also add a visual indicator when data is being served from cache vs freshly fetched, and a manual cache-bust button so you can force a refresh if you've updated your sheets:
-
-
-Edited 3 files
-Edited 3 files
-Now wire up the cache status + refresh link in app.js:
-
-
-Edited 2 files, ran a command, read a file
-Edited 2 files, ran a command, read a file
-Three optimisations:
-
-Session cache — SHEET_CACHE is now a module-level object, not recreated per search. First search fetches everything; every subsequent search in the same browser tab is near-instant since it just filters already-parsed rows in memory. Refreshing the page clears the cache.
-
-True parallel fetching — all unique sheet+gid combinations are collected upfront and fired simultaneously with Promise.all before any matching begins, instead of being kicked off section by section.
-
-Cache status + manual clear — after the first search a small line appears below the search box: "8 sources cached in memory — subsequent searches are instant. Clear cache". The "Clear cache" link lets you force a re-fetch if you've updated your sheets mid-session without reloading the page.
-
-The real-world impact depends mostly on how large your sheets are and Google's response time, but the second search for any person should feel instant.
-
-
-App
-JS 
-
-Index
-Code · HTML 
-
-Style
-Code · CSS 
-5409316378386305068.jpg
-Revisions are unscrollable again from mobile, and header width from mobile also looks weird, also # buttons are cut down by the column width
-
-12:28 AM
-Three separate issues visible in the screenshot:
-
-Unscrollable — the household-section has overflow: hidden from the border-radius card styling, which clips the horizontal scroll
-Header width — the sticky header isn't constraining properly on narrow screens
-# column cut off — the col-link width is too narrow for the # button
-
-Edited 3 files
-Edited 3 files
-Also need to make .record-table-wrap inside .household-section properly scrollable — the border-radius on the parent without overflow:hidden means the table corners won't be clipped, but that's fine visually. The key is the wrap itself scrolls:
-
-
-Ensure record-table-wrap handles scroll independently
-Ensure record-table-wrap handles scroll independently
-Also update the colgroup for the # link column to match the new width:
-
-
-Edited a file, ran a command, read a file
-Edited a file, ran a command, read a file
-Three fixes:
-
-Unscrollable table — removed overflow: hidden from .household-section. That property was swallowing the horizontal scroll gesture on mobile. The .record-table-wrap handles its own overflow-x: auto independently.
-
-# button clipped — widened .col-link from 32px to 36px with symmetric padding, and updated the matching <col> in the colgroup.
-
-Header on mobile — reduced padding from 2rem to 1.25rem and added overflow: hidden so the subtitle doesn't push the header wider than the screen on narrow devices.
-
-
-Style
-Code · CSS 
-
-App
-JS 
-1776394853318_Screenshot 2026-04-16 153228.png
-can we try changing color palette to sth like this?
-
-5:00 AM
-Nice palette — muted olive/sage greens, deep forest green, steel blue, and a light blue tint for backgrounds. Let me remap the variables.
-
-
-Replace color palette with olive/forest green/steel blue scheme
-Replace color palette with olive/forest green/steel blue scheme
-Now update the few hardcoded colours that don't use variables — the source label (accent blue bar), household info background, matched row, and error box:
-
-
-Edited 4 files, ran 2 commands, read a file
-Edited 4 files, ran 2 commands, read a file
-Here's how the palette maps:
-
-Element	Before	After
-Page background	cold blue-grey	warm olive 
-#eef0e4
-Card surface	white	pale sage 
-#f5f6ee
-Card surface2 / headers	light blue-grey	muted olive 
-#e8ead9
-Borders	blue-grey	warm grey-green 
-#cdd0b8
-Accent (buttons, links, pills)	bright blue	steel blue 
-#2e6b8a
-Source label bar	blue	deep forest green 
-#1e4d2b
-Household info bar	light blue	sage 
-#dde5c8
-Text	near-black blue	deep forest 
-#1e2a1a
-Faint text	blue-grey	muted green-grey 
-#7a8c6a
-
-Style
-Code · CSS 
-ok, let's rollback, liked the previous version better
-
-8:29 PM
-
-Edited 4 files, ran 2 commands, read a file
-Edited 4 files, ran 2 commands, read a file
-Back to the blue/neutral palette.
-
-
-Style
-Code · CSS 
-
-
-
-
-Claude is AI and can make mistakes. Please double-check responses.
-Style · CSS
-Copied
-Copy
-
 /* ─── Variables ─────────────────────────────────────────── */
 :root {
   --bg:          #f0f2f8;
@@ -1161,11 +20,11 @@ Copy
   --radius-xs:   6px;
   --font:        'Inter', 'Segoe UI', system-ui, sans-serif;
 }
- 
+
 /* ─── Reset & Base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 15px; scroll-behavior: smooth; }
- 
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -1176,7 +35,7 @@ body {
   display: flex;
   flex-direction: column;
 }
- 
+
 /* ─── Header ────────────────────────────────────────────── */
 header {
   background: var(--surface);
@@ -1191,7 +50,7 @@ header {
   z-index: 100;
   overflow: hidden;
 }
- 
+
 .header-inner {
   display: flex;
   align-items: center;
@@ -1200,7 +59,7 @@ header {
   max-width: 1600px;
   margin: 0 auto;
 }
- 
+
 .header-ornament {
   width: 34px;
   height: 34px;
@@ -1212,20 +71,20 @@ header {
   font-size: 1rem;
   flex-shrink: 0;
 }
- 
+
 h1 {
   font-size: 1rem;
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.01em;
 }
- 
+
 .subtitle {
   font-size: 0.8rem;
   color: var(--text-faint);
   margin-left: auto;
 }
- 
+
 /* ─── Main ──────────────────────────────────────────────── */
 main {
   flex: 1;
@@ -1234,10 +93,10 @@ main {
   padding: 2rem 2rem;
   width: 100%;
 }
- 
+
 /* ─── Search ────────────────────────────────────────────── */
 .search-section { margin-bottom: 2rem; }
- 
+
 .search-box {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1245,7 +104,7 @@ main {
   padding: 1.75rem 2rem;
   box-shadow: var(--shadow-md);
 }
- 
+
 .search-box label {
   display: block;
   font-size: 0.7rem;
@@ -1255,13 +114,13 @@ main {
   color: var(--text-faint);
   margin-bottom: 0.6rem;
 }
- 
+
 .input-row {
   display: flex;
   gap: 0.75rem;
   align-items: stretch;
 }
- 
+
 input[type="number"] {
   flex: 1;
   max-width: 260px;
@@ -1282,7 +141,7 @@ input[type="number"]:focus {
   box-shadow: 0 0 0 3px var(--accent-soft2);
   background: var(--surface);
 }
- 
+
 button#search-btn {
   background: var(--accent);
   color: #fff;
@@ -1302,13 +161,13 @@ button#search-btn:hover {
   box-shadow: 0 4px 14px rgba(79,110,247,0.35);
 }
 button#search-btn:active { transform: translateY(1px); }
- 
+
 .search-hint {
   font-size: 0.75rem;
   color: var(--text-faint);
   margin-top: 0.6rem;
 }
- 
+
 .cache-status {
   font-size: 0.73rem;
   color: var(--text-faint);
@@ -1319,17 +178,17 @@ button#search-btn:active { transform: translateY(1px); }
   cursor: pointer;
   text-decoration: underline;
 }
- 
+
 /* ─── Loading ───────────────────────────────────────────── */
 .loading-section { text-align: center; padding: 3rem 0; }
- 
+
 .loading-inner {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 1rem;
 }
- 
+
 .spinner {
   width: 28px;
   height: 28px;
@@ -1339,12 +198,12 @@ button#search-btn:active { transform: translateY(1px); }
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
- 
+
 #loading-message { color: var(--text-faint); font-size: 0.85rem; }
- 
+
 /* ─── Error ─────────────────────────────────────────────── */
 .error-section { margin-top: 1.5rem; }
- 
+
 .error-box {
   display: flex;
   align-items: center;
@@ -1357,28 +216,28 @@ button#search-btn:active { transform: translateY(1px); }
   font-size: 0.88rem;
 }
 .error-icon { font-size: 1.1rem; }
- 
+
 /* ─── Results header ────────────────────────────────────── */
 .results-header {
   margin-bottom: 1.5rem;
 }
- 
+
 .results-header h2 {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.01em;
 }
- 
+
 .results-header h2 span { color: var(--accent); }
- 
+
 .results-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   margin-top: 0.75rem;
 }
- 
+
 .summary-pill {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1395,7 +254,7 @@ button#search-btn:active { transform: translateY(1px); }
   border-color: var(--text-faint);
   color: var(--text);
 }
- 
+
 .summary-pill.has-data {
   background: var(--accent-soft);
   border-color: var(--accent-soft2);
@@ -1405,7 +264,7 @@ button#search-btn:active { transform: translateY(1px); }
   background: var(--accent-soft2);
   border-color: var(--accent);
 }
- 
+
 /* ─── Section Cards ─────────────────────────────────────── */
 .result-section {
   background: var(--surface);
@@ -1416,11 +275,11 @@ button#search-btn:active { transform: translateY(1px); }
   overflow: hidden;
   animation: fadeUp 0.3s ease both;
 }
- 
+
 .result-section-body {
   padding: 1.25rem 1.5rem 1.5rem;
 }
- 
+
 /* source-groups inside the body break out of the padding */
 .result-section-body .source-group {
   margin-left: -1.5rem;
@@ -1429,12 +288,12 @@ button#search-btn:active { transform: translateY(1px); }
 .result-section-body .source-group:last-child {
   margin-bottom: -1.5rem;
 }
- 
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
- 
+
 .section-header {
   display: flex;
   align-items: center;
@@ -1443,32 +302,32 @@ button#search-btn:active { transform: translateY(1px); }
   border-bottom: 1px solid var(--border);
   background: var(--surface2);
 }
- 
+
 .section-title {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text);
 }
- 
+
 .section-count {
   font-size: 0.73rem;
   color: var(--text-faint);
   margin-left: auto;
 }
- 
+
 .section-empty {
   color: var(--text-faint);
   font-size: 0.85rem;
   padding: 1.25rem 1.5rem;
 }
- 
+
 /* ─── Source Groups ─────────────────────────────────────── */
 .source-group {
   border-bottom: none;
   margin-top: 1.5rem;
 }
 .source-group:first-child { margin-top: 0; }
- 
+
 .source-label {
   font-size: 0.72rem;
   font-weight: 700;
@@ -1482,7 +341,7 @@ button#search-btn:active { transform: translateY(1px); }
   gap: 0.5rem;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
- 
+
 /* ─── Household blocks ──────────────────────────────────── */
 .household-section {
   margin-top: 1.25rem;
@@ -1494,7 +353,7 @@ button#search-btn:active { transform: translateY(1px); }
 .household-section:first-of-type {
   margin-top: 0;
 }
- 
+
 .household-info {
   box-sizing: border-box;
   text-align: center;
@@ -1509,20 +368,20 @@ button#search-btn:active { transform: translateY(1px); }
   justify-content: center;
   gap: 0;
 }
- 
+
 /* spans are just inline — comma is added via JS now */
 .household-info > span {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text);
 }
- 
+
 /* The ↗ link inside household-info */
 .household-info > a.row-link {
   margin-left: 0.75rem;
   flex-shrink: 0;
 }
- 
+
 /* ─── Data Tables ───────────────────────────────────────── */
 .record-table-wrap {
   overflow-x: auto;
@@ -1531,19 +390,19 @@ button#search-btn:active { transform: translateY(1px); }
   /* border-radius on bottom to match household-section card */
   border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
- 
+
 table.record-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
   table-layout: fixed;
 }
- 
+
 table.record-table thead tr {
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
 }
- 
+
 table.record-table th {
   text-align: left;
   padding: 0.5rem 0.6rem;
@@ -1557,7 +416,7 @@ table.record-table th {
   vertical-align: bottom;
   overflow: hidden;
 }
- 
+
 table.record-table td {
   padding: 0.45rem 0.6rem;
   vertical-align: middle;
@@ -1568,16 +427,27 @@ table.record-table td {
   word-break: break-word;
   overflow: hidden;
 }
- 
+
 table.record-table tbody tr:last-child td { border-bottom: none; }
 table.record-table tbody tr:hover { background: var(--surface2); }
- 
+
+/* Linked person name inside a cell */
+a.cell-person-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--accent-soft2);
+  transition: border-color 0.15s, color 0.15s;
+}
+a.cell-person-link:hover {
+  border-bottom-color: var(--accent);
+}
+
 /* Dimmed /…/ content within cells */
 .cell-dim {
   color: var(--text-faint);
   font-style: italic;
 }
- 
+
 /* Matched row highlight — vivid */
 table.record-table tbody tr.matched-row {
   background: rgba(79,110,247,0.22);
@@ -1592,7 +462,7 @@ table.record-table tbody tr.matched-row td:first-child {
 table.record-table tbody tr.matched-row:hover {
   background: rgba(79,110,247,0.30);
 }
- 
+
 /* Role badge */
 .role-badge {
   display: inline-block;
@@ -1607,7 +477,7 @@ table.record-table tbody tr.matched-row:hover {
   color: var(--accent);
   border: 1px solid var(--accent-soft2);
 }
- 
+
 /* Row link icon */
 .col-link {
   width: 36px;
@@ -1615,7 +485,7 @@ table.record-table tbody tr.matched-row:hover {
   padding: 0.55rem 0.4rem !important;
   text-align: center;
 }
- 
+
 a.row-link {
   display: inline-flex;
   align-items: center;
@@ -1630,14 +500,14 @@ a.row-link {
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
- 
+
 a.row-link:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
   box-shadow: 0 2px 6px rgba(79,110,247,0.3);
 }
- 
+
 /* Internal person page link — filled accent by default */
 a.row-link.person-link {
   background: var(--accent-soft);
@@ -1651,14 +521,14 @@ a.row-link.person-link:hover {
   border-color: var(--accent);
   color: #fff;
 }
- 
+
 /* Household separator — no longer used but kept for safety */
 tr.household-gap td {
   padding: 0.1rem 0;
   border-bottom: 2px dashed var(--border);
   background: transparent !important;
 }
- 
+
 /* ─── Scroll to top ─────────────────────────────────────── */
 #scroll-top {
   position: fixed;
@@ -1687,10 +557,10 @@ tr.household-gap td {
 }
 #scroll-top:hover { transform: translateY(-2px); }
 #scroll-top:active { transform: translateY(0); }
- 
+
 /* ─── Utilities ─────────────────────────────────────────── */
 .hidden { display: none !important; }
- 
+
 /* ─── Footer ────────────────────────────────────────────── */
 footer {
   text-align: center;
@@ -1700,7 +570,7 @@ footer {
   color: var(--text-faint);
   background: var(--surface);
 }
- 
+
 /* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 600px) {
   header { padding: 0 1rem; }
@@ -1711,15 +581,3 @@ footer {
   button#search-btn { width: 100%; }
   main { padding: 1.25rem 1rem; }
 }
- 
-
-
-
-
-
-
-
-
-
-
-
