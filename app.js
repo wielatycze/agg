@@ -252,7 +252,7 @@ function makeLinkIcon(url) {
   return a;
 }
 
-function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, highlightMatched = false) {
+function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, highlightMatched = false, currentSearchId = null) {
   const colMap = resolveColumnMap(source, config);
   const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
   const householdCols = source.household_columns || [];
@@ -265,7 +265,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
 
   if (!isHousehold) {
     // Non-household: single table
-    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, true, config, highlightMatched);
+    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, true, config, highlightMatched, currentSearchId);
     wrap.appendChild(table);
     return wrap;
   }
@@ -310,7 +310,7 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
     }
 
     // Person table — hasLink=true so every row gets its own ↗ link
-    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, true, config, highlightMatched);
+    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, true, config, highlightMatched, currentSearchId);
     householdDiv.appendChild(table);
 
     wrap.appendChild(householdDiv);
@@ -333,11 +333,12 @@ function resolveLinks(source, config) {
 
 /**
  * Render a cell value into a td, dimming any /…/ segments.
- * If personId is provided and non-empty, wraps content in a link to ?id=personId.
+ * If linkedId is provided and non-empty:
+ *   - if it matches currentSearchId → mark cell as current person (no link)
+ *   - otherwise → render a small → button after the text
  */
-function renderCellValue(td, val, personId = null) {
-  // Build the inner content (with dimmed slashes)
-  const buildContent = (container) => {
+function renderCellValue(td, val, linkedId = null, currentSearchId = null) {
+  const buildText = (container) => {
     if (!val || !val.includes('/')) {
       container.appendChild(document.createTextNode(val || ''));
       return;
@@ -356,19 +357,25 @@ function renderCellValue(td, val, personId = null) {
     });
   };
 
-  if (personId) {
-    const a = document.createElement('a');
-    a.href = `?id=${personId}`;
-    a.className = 'cell-person-link';
-    a.title = `Go to person #${personId}`;
-    buildContent(a);
-    td.appendChild(a);
-  } else {
-    buildContent(td);
+  buildText(td);
+
+  if (linkedId) {
+    if (String(linkedId) === String(currentSearchId)) {
+      // This is the person currently being viewed — mark the cell
+      td.classList.add('cell-current-person');
+    } else {
+      // Another person — add a small navigation button
+      const btn = document.createElement('a');
+      btn.href = `?id=${linkedId}`;
+      btn.className = 'cell-nav-btn';
+      btn.title = `Go to person #${linkedId}`;
+      btn.textContent = '→';
+      td.appendChild(btn);
+    }
   }
 }
 
-function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config, highlightMatched = false) {
+function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config, highlightMatched = false, currentSearchId = null) {
   const colMap = resolveColumnMap(source, config);
   const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
   const showRole = resolveDisplayColumns(source, config, colMap).includes('_role_');
@@ -491,18 +498,17 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     displayCols.forEach(col => {
       const td = tr.insertCell();
       const val = formatDisplayValue(row, col);
-      // Check if this column has a linked ID column
       const colLabel = typeof col === 'string' ? col : (col.label ?? '');
       const idCol = links?.[colLabel];
       const linkedId = idCol ? normaliseId(row[idCol]) : null;
-      renderCellValue(td, val, linkedId || null);
+      renderCellValue(td, val, linkedId || null, currentSearchId);
     });
   });
 
   return table;
 }
 
-function renderSection(section, results, config) {
+function renderSection(section, results, config, currentSearchId = null) {
   const hasAny = results.some(r => r !== null);
 
   const div = document.createElement('div');
@@ -554,7 +560,7 @@ function renderSection(section, results, config) {
     group.appendChild(label);
 
     const { displayIndices, matchedSet, matchedRoles, allRows } = result;
-    const tableWrap = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, section.highlight_matched ?? false);
+    const tableWrap = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, section.highlight_matched ?? false, currentSearchId);
     group.appendChild(tableWrap);
 
     body.appendChild(group);
@@ -667,7 +673,7 @@ async function runSearch(personId) {
     pill.href = `#section-${section.id}`;
     summaryEl.appendChild(pill);
 
-    const sectionEl = renderSection(section, sectionResults, config);
+    const sectionEl = renderSection(section, sectionResults, config, personId);
     resultsBody.appendChild(sectionEl);
   }
 

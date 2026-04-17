@@ -431,15 +431,33 @@ table.record-table td {
 table.record-table tbody tr:last-child td { border-bottom: none; }
 table.record-table tbody tr:hover { background: var(--surface2); }
 
-/* Linked person name inside a cell */
-a.cell-person-link {
+/* Nav button beside a linked person's name */
+a.cell-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.35rem;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft2);
   color: var(--accent);
+  font-size: 0.6rem;
   text-decoration: none;
-  border-bottom: 1px dashed var(--accent-soft2);
-  transition: border-color 0.15s, color 0.15s;
+  vertical-align: middle;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
 }
-a.cell-person-link:hover {
-  border-bottom-color: var(--accent);
+a.cell-nav-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Cell whose linked person is the current search subject */
+td.cell-current-person {
+  font-weight: 600;
+  color: var(--accent);
 }
 
 /* Dimmed /…/ content within cells */
