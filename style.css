@@ -1,20 +1,20 @@
 /* ─── Variables ─────────────────────────────────────────── */
 :root {
-  --bg:          #f0f2f8;
-  --surface:     #ffffff;
-  --surface2:    #f7f8fc;
-  --border:      #e8eaf2;
-  --text:        #1a1d2e;
-  --text-mid:    #5a607a;
-  --text-faint:  #9ba3be;
-  --accent:      #4f6ef7;
-  --accent-dark: #3a57e8;
-  --accent-soft: rgba(79,110,247,0.08);
-  --accent-soft2:rgba(79,110,247,0.15);
-  --matched:     rgba(79,110,247,0.06);
-  --matched-hov: rgba(79,110,247,0.1);
-  --shadow-sm:   0 1px 4px rgba(30,40,100,0.06);
-  --shadow-md:   0 4px 16px rgba(30,40,100,0.08);
+  --bg:          #eef0e4;
+  --surface:     #f5f6ee;
+  --surface2:    #e8ead9;
+  --border:      #cdd0b8;
+  --text:        #1e2a1a;
+  --text-mid:    #3d4f32;
+  --text-faint:  #7a8c6a;
+  --accent:      #2e6b8a;
+  --accent-dark: #1f5270;
+  --accent-soft: rgba(46,107,138,0.09);
+  --accent-soft2:rgba(46,107,138,0.18);
+  --matched:     rgba(46,107,138,0.10);
+  --matched-hov: rgba(46,107,138,0.17);
+  --shadow-sm:   0 1px 4px rgba(20,35,15,0.07);
+  --shadow-md:   0 4px 16px rgba(20,35,15,0.09);
   --radius:      12px;
   --radius-sm:   8px;
   --radius-xs:   6px;
@@ -154,11 +154,11 @@ button#search-btn {
   border-radius: var(--radius-sm);
   transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(79,110,247,0.25);
+  box-shadow: 0 2px 8px rgba(46,107,138,0.25);
 }
 button#search-btn:hover {
   background: var(--accent-dark);
-  box-shadow: 0 4px 14px rgba(79,110,247,0.35);
+  box-shadow: 0 4px 14px rgba(46,107,138,0.35);
 }
 button#search-btn:active { transform: translateY(1px); }
 
@@ -335,7 +335,7 @@ button#search-btn:active { transform: translateY(1px); }
   text-transform: uppercase;
   color: #fff;
   padding: 0.6rem 1.5rem;
-  background: var(--accent);
+  background: #1e4d2b;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -358,7 +358,7 @@ button#search-btn:active { transform: translateY(1px); }
   box-sizing: border-box;
   text-align: center;
   padding: 0.6rem 1.25rem;
-  background: #eef1fd;
+  background: #dde5c8;
   border-bottom: 1px solid var(--border);
   font-size: 0.85rem;
   font-weight: 600;
@@ -439,7 +439,7 @@ table.record-table tbody tr:hover { background: var(--surface2); }
 
 /* Matched row highlight — vivid */
 table.record-table tbody tr.matched-row {
-  background: rgba(79,110,247,0.22);
+  background: rgba(46,107,138,0.15);
 }
 table.record-table tbody tr.matched-row td {
   color: var(--text);
@@ -449,7 +449,7 @@ table.record-table tbody tr.matched-row td:first-child {
   box-shadow: inset 4px 0 0 var(--accent);
 }
 table.record-table tbody tr.matched-row:hover {
-  background: rgba(79,110,247,0.30);
+  background: rgba(46,107,138,0.22);
 }
 
 /* Role badge */
@@ -494,7 +494,7 @@ a.row-link:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
-  box-shadow: 0 2px 6px rgba(79,110,247,0.3);
+  box-shadow: 0 2px 6px rgba(46,107,138,0.3);
 }
 
 /* Internal person page link — filled accent by default */
@@ -531,7 +531,7 @@ tr.household-gap td {
   border: none;
   font-size: 1.1rem;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(79,110,247,0.35);
+  box-shadow: 0 4px 14px rgba(46,107,138,0.35);
   display: flex;
   align-items: center;
   justify-content: center;
