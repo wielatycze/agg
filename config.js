@@ -20,8 +20,7 @@ const GENEALOGY_CONFIG = {
     birthUn:      { sheet: "churchRecords", gid: 572746856 },
     birthPr:      { sheet: "churchRecords", gid: 0 },
     marriageUn:   { sheet: "churchRecords", gid: 1045153146 },
-    marriageOrth:     { sheet: "churchRecords", gid: 229265291 }
-
+    marriageOrth: { sheet: "churchRecords", gid: 229265291 }
   },
 
   columns: {
@@ -41,7 +40,6 @@ const GENEALOGY_CONFIG = {
         "крестный 1",
         "крестный 2"
       ],
-      // links: display column name → ID column in the sheet
       links: {
         "имя ребенка": "#ребенка",
         "имя отца":    "#отца",
@@ -81,39 +79,6 @@ const GENEALOGY_CONFIG = {
         "m_pl", "m_name", "m_patr", "m_surn", "m_age", "f_pl", "f_patr", "f_surn", "f_age"]
     }
   },
-
-  // ──────────────────────────────────────────────────────────
-  // SECTIONS
-  // Each section groups related sources into one display block.
-  //
-  // Per source:
-  //   sheet_id         — long ID from the sheet URL (legacy; optional when using config.tabs)
-  //   tab              — tab key defined in config.tabs, or the exact tab name for legacy support
-  //                      not required when gid is provided, because gid is enough for fetching.
-  //   label            — human label shown on the page
-  //   household_column — REVISIONS ONLY: column whose value
-  //                      groups household members; all rows
-  //                      with the same value are displayed
-  //                      when any member is matched.
-  //                      Must be null for all other sections.
-  //   columnMap        — optional object mapping sheet column names to display names
-  //                      e.g. { "long_name": "short_name" } (per-source override only)
-  //   display_columns  — either a string (reference to config.columns key)
-  //                      or an array of column headers to show.
-  //                      Entries may be strings or objects like { label, columns, join }
-  //                      to combine multiple fields into one display cell.
-  //                      Use "_role_" to insert a Role badge column.
-  //                      If display_columns is a string, columnMap is inherited from
-  //                      the column set; per-source columnMap overrides it.
-  //   roles            — { column, role } pairs; person is
-  //                      matched if their ID appears in ANY
-  //                      of these columns
-  //   household_columns — REVISIONS ONLY: ordered list of column
-  //                      headers to show once per household above the table.
-  //                      Entries may be strings or objects like
-  //                      { template: "text {column}", column: "col" } for custom formatting.
-  //                      Must be null for all other sections.
-  // ──────────────────────────────────────────────────────────
 
   sections: [
 
@@ -232,6 +197,7 @@ const GENEALOGY_CONFIG = {
           ],
           display_columns: "marriagesUn"
         },
+
         {
           tab:              "marriageOrth",
           label:            "Вяляцічы, праваслаўная царква",
@@ -243,8 +209,6 @@ const GENEALOGY_CONFIG = {
           display_columns: "marriagesOrth"
         }
 
-
-        // Add more marriage sources here…
       ]
     },
 
@@ -311,14 +275,14 @@ const GENEALOGY_CONFIG = {
           display_columns: "birthsUn"
         }
 
-        // Р/Велятичи пр: add when godparent ID column names are known
       ]
     },
-        // ── WITNESS AT MARRIAGES ─────────────────────────────────
 
+    // ── WITNESS AT MARRIAGES ─────────────────────────────────
     {
-      id: "witness_marriage",
-      label: "Сведкі - шлюбы",
+      id:    "witness_marriage",
+      highlight_matched: false,
+      label: "Сведкі — шлюбы",
       icon:  "👁",
       sources: [
         {
@@ -326,16 +290,14 @@ const GENEALOGY_CONFIG = {
           label:            "Вяляцічы, уніацкая царква",
           household_column: null,
           roles: [
-            { column: "#свидетель1",  role: "Сведка #1" },
-            { column: "#свидетель2",  role: "Сведка #2" },
-            { column: "#свидетель3",  role: "Сведка #3" },
+            { column: "#свидетель1", role: "Сведка #1" },
+            { column: "#свидетель2", role: "Сведка #2" },
+            { column: "#свидетель3", role: "Сведка #3" }
           ],
           display_columns: "marriagesUn"
         }
       ]
     }
-
-    
 
   ] // end sections
 };

@@ -624,10 +624,10 @@ async function runSearch(personId) {
   }
 
   // Wait for all fetches in parallel
-  const cachedCount = Object.keys(SHEET_CACHE).length - uniqueKeys.size + [...uniqueKeys].filter(k => SHEET_CACHE[k]).length;
-  const fromCache = [...uniqueKeys].every(k => SHEET_CACHE[k]);
+  const cachedCount = [...uniqueKeys].filter(k => SHEET_CACHE[k]).length;
   setLoading(`Loading ${uniqueKeys.size} sources…`);
-  await Promise.all(Object.values(SHEET_CACHE));
+  // Wait only for the current batch — already-resolved promises return instantly
+  await Promise.all([...uniqueKeys].map(k => SHEET_CACHE[k]));
 
   // ── Now match and render ──
   const totalSources = config.sections.reduce((n, s) => n + s.sources.length, 0);
