@@ -19,7 +19,9 @@ const GENEALOGY_CONFIG = {
     revision1858: { sheet: "revisions", gid: 2074719809 },
     birthUn:      { sheet: "churchRecords", gid: 572746856 },
     birthPr:      { sheet: "churchRecords", gid: 0 },
-    marriageUn:   { sheet: "churchRecords", gid: 1045153146 }
+    marriageUn:   { sheet: "churchRecords", gid: 1045153146 },
+    marriageOrth:     { sheet: "churchRecords", gid: 229265291 }
+
   },
 
   columns: {
@@ -72,6 +74,11 @@ const GENEALOGY_CONFIG = {
     },
     marriagesUn: {
       columns: ["_role_","год", "№", "1", "2", "3", "4", "5", "6", "7", "8"]
+    },
+    marriagesOrth: {
+      columns: ["_role_", "№",
+        { label: "дата шлюба", columns: ["dd", "mm"], join: ".", format: "date" }, "year",
+        "m_pl", "m_name", "m_patr", "m_surn", "m_age", "f_pl", "f_patr", "f_surn", "f_age"]
     }
   },
 
@@ -126,7 +133,7 @@ const GENEALOGY_CONFIG = {
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
-          display_columns: "revisions"
+          display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии"]
         },
 
         {
@@ -220,11 +227,22 @@ const GENEALOGY_CONFIG = {
           label:            "Вяляцічы, уніацкая царква",
           household_column: null,
           roles: [
-            { column: "#жениха",  role: "Groom" },
-            { column: "#невесты", role: "Bride" }
+            { column: "#жениха",  role: "Жаніх" },
+            { column: "#невесты", role: "Нявеста" }
           ],
           display_columns: "marriagesUn"
+        },
+        {
+          tab:              "marriageOrth",
+          label:            "Вяляцічы, праваслаўная царква",
+          household_column: null,
+          roles: [
+            { column: "#жаніха",  role: "Жаніх" },
+            { column: "#нявесты", role: "Нявеста" }
+          ],
+          display_columns: "marriagesOrth"
         }
+
 
         // Add more marriage sources here…
       ]
