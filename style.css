@@ -432,11 +432,19 @@ table.record-table tbody tr:last-child td { border-bottom: none; }
 table.record-table tbody tr:hover { background: var(--surface2); }
 
 /* Nav button beside a linked person's name */
+td:has(> a.cell-nav-btn) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
 a.cell-nav-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: 0.35rem;
+  margin-left: auto;
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
   border-radius: 3px;
@@ -447,7 +455,6 @@ a.cell-nav-btn {
   text-decoration: none;
   vertical-align: middle;
   transition: background 0.15s, color 0.15s;
-  flex-shrink: 0;
 }
 a.cell-nav-btn:hover {
   background: var(--accent);
