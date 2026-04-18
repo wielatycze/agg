@@ -586,6 +586,9 @@ async function runSearch(personId) {
     const hasData = sectionResults.some(r => r !== null);
     if (hasData) totalFound++;
 
+    // hide_if_empty: true — skip pill and card entirely when no records found
+    if (!hasData && section.hide_if_empty) continue;
+
     summaryEl.appendChild(makeElement('a', {
       className: 'summary-pill' + (hasData ? ' has-data' : ''),
       textContent: `${section.icon} ${section.label}`,

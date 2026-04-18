@@ -96,8 +96,11 @@ const GENEALOGY_CONFIG = {
   },
 
   sections: [
-
-    // ── REVISIONS ───────────────────────────────────────────
+  // Section flags:
+  //   highlight_matched: true  — highlight the matched person's rows in the table
+  //   hide_if_empty: true      — hide section + pill entirely when no records found
+  //                              (default: false — section always shown with empty state)
+  //                              Use for optional parishes you plan to add in the future.
     {
       id:    "revisions",
       label: "Рэвізскіі сказкі",
