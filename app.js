@@ -1,110 +1,36 @@
 // ============================================================
 //  GENEALOGY SITE — APP LOGIC
-//  Do not edit unless you want to change behaviour.
 // ============================================================
 
-// ── Module-level sheet cache ─────────────────────────────
-// Persists across searches so sheets are only fetched once per session.
-const SHEET_CACHE = {}; // cacheKey -> Promise<rows[]>
+// ── Session cache ────────────────────────────────────────────
+// key: "sheetId::gid" → Promise<rows[]>
+// Persists across searches; cleared by user via "Ачысціць кэш".
+const SHEET_CACHE = {};
 
-/**
- * Fetch a Google Sheet tab as an array of row-objects.
- * Requires the sheet to be published / "anyone with link can view".
- * Uses the gviz CSV endpoint — no API key needed.
- */
+// ── Data fetching ─────────────────────────────────────────────
+
 async function fetchSheetTab(sheetId, gid) {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch gid=${gid} (HTTP ${res.status})`);
-  const text = await res.text();
-  return parseCSV(text);
+  return parseCSV(await res.text());
 }
 
-/**
- * Apply a column map to rename columns in row objects.
- */
-function renameColumns(rows, columnMap) {
-  if (!columnMap || Object.keys(columnMap).length === 0) return rows;
-  return rows.map(row => {
-    const newRow = {};
-    for (const [key, value] of Object.entries(row)) {
-      const newKey = columnMap[key] ?? key;
-      newRow[newKey] = value;
-    }
-    return newRow;
-  });
-}
+// ── CSV parsing ───────────────────────────────────────────────
 
-/**
- * Resolve source.display_columns, which can be either:
- * - a string: reference to config.columns (e.g. "revisions")
- * - an array: inline column definitions
- * If columnMap is present, apply it to column names in the array.
- */
-function resolveDisplayColumns(source, config, colMap = null) {
-  let cols = source.display_columns;
-  
-  // If it's a string, look it up in config.columns
-  if (typeof cols === 'string') {
-    if (config.columns?.[cols]) {
-      const colDef = config.columns[cols];
-      cols = Array.isArray(colDef) ? colDef : (colDef.columns ?? []);
-    } else {
-      cols = [];
-    }
-  }
-  
-  // Apply columnMap to column names
-  if (colMap && Array.isArray(cols)) {
-    cols = cols.map(col => {
-      if (typeof col === 'string' && colMap[col]) {
-        return colMap[col];
-      }
-      return col;
-    });
-  }
-  
-  return cols || [];
-}
-
-/**
- * Resolve source.display_columns to get the columnMap.
- * If display_columns is a string reference, look up the columnMap in that column set.
- */
-function resolveColumnMap(source, config) {
-  if (source.columnMap) {
-    return source.columnMap;
-  }
-  if (typeof source.display_columns === 'string' && config.columns?.[source.display_columns]) {
-    const colDef = config.columns[source.display_columns];
-    // columnMap is only available in object format
-    return !Array.isArray(colDef) ? (colDef.columnMap ?? null) : null;
-  }
-  return null;
-}
-
-/**
- * Minimal but robust CSV parser that handles quoted fields and embedded commas/newlines.
- * Returns array of objects keyed by the first row (headers).
- */
 function parseCSV(text) {
   const rows = [];
-  let row = [];
-  let field = '';
-  let inQuotes = false;
-  let i = 0;
+  let row = [], field = '', inQuotes = false, i = 0;
 
   while (i < text.length) {
     const ch = text[i];
-
     if (inQuotes) {
       if (ch === '"') {
-        if (text[i + 1] === '"') { field += '"'; i += 2; continue; } // escaped quote
+        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
         inQuotes = false; i++; continue;
       }
       field += ch; i++; continue;
     }
-
     if (ch === '"')  { inQuotes = true; i++; continue; }
     if (ch === ',')  { row.push(field.trim()); field = ''; i++; continue; }
     if (ch === '\r') { i++; continue; }
@@ -115,88 +41,125 @@ function parseCSV(text) {
     field += ch; i++;
   }
   if (field || row.length) { row.push(field.trim()); rows.push(row); }
-
   if (rows.length === 0) return [];
+
   const headers = rows[0].map(h => h.replace(/^"|"$/g, '').trim());
-  return rows.slice(1).map(r => {
-    const obj = {};
-    headers.forEach((h, idx) => { obj[h] = (r[idx] ?? '').replace(/^"|"$/g, '').trim(); });
-    return obj;
-  }).filter(row => Object.values(row).some(v => v !== ''));
+  return rows.slice(1)
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => { obj[h] = (r[idx] ?? '').replace(/^"|"$/g, '').trim(); });
+      return obj;
+    })
+    .filter(row => Object.values(row).some(v => v !== ''));
+}
+
+// ── Config resolution helpers ─────────────────────────────────
+
+/** Resolve { sheetId, gid } for a source, supporting tab-ref and legacy formats. */
+function resolveSourceMeta(source, config) {
+  const tabRef = config.tabs?.[source.tab];
+  if (tabRef) {
+    return {
+      sheetId: config.sheets?.[tabRef.sheet] ?? tabRef.sheet_id ?? source.sheet_id,
+      gid: tabRef.gid ?? source.gid,
+    };
+  }
+  return {
+    sheetId: source.sheet_id ?? (source.sheet ? config.sheets?.[source.sheet] : null),
+    gid: source.gid,
+  };
+}
+
+/** Resolve the columnMap for a source. */
+function resolveColumnMap(source, config) {
+  if (source.columnMap) return source.columnMap;
+  const colDef = config.columns?.[source.display_columns];
+  return (!Array.isArray(colDef) && colDef?.columnMap) || null;
+}
+
+/** Resolve the links map for a source (display column → ID column). */
+function resolveLinks(source, config) {
+  if (source.links) return source.links;
+  const colDef = config.columns?.[source.display_columns];
+  return (!Array.isArray(colDef) && colDef?.links) || null;
 }
 
 /**
- * Normalise a cell value: strip whitespace, treat as string for comparison.
+ * Resolve display_columns into a flat array of column specs.
+ * Handles string references, inline arrays, and columnMap renaming.
  */
+function resolveDisplayColumns(source, config) {
+  const colMap = resolveColumnMap(source, config);
+  let cols = source.display_columns;
+
+  if (typeof cols === 'string') {
+    const colDef = config.columns?.[cols];
+    cols = Array.isArray(colDef) ? colDef : (colDef?.columns ?? []);
+  }
+
+  if (colMap && Array.isArray(cols)) {
+    cols = cols.map(col => (typeof col === 'string' && colMap[col]) ? colMap[col] : col);
+  }
+
+  return cols || [];
+}
+
+/** Apply a column rename map to an array of row objects. */
+function applyColumnMap(rows, columnMap) {
+  if (!columnMap || Object.keys(columnMap).length === 0) return rows;
+  return rows.map(row => {
+    const out = {};
+    for (const [k, v] of Object.entries(row)) out[columnMap[k] ?? k] = v;
+    return out;
+  });
+}
+
+/** Normalise a cell value for ID comparison. */
 function normaliseId(val) {
   return String(val ?? '').trim();
 }
 
-function resolveSourceSheetTab(source, config) {
-  let sheetId = source.sheet_id;
-  let tab = source.tab;
-  let gid = source.gid;
-
-  let tabRef = config.tabs?.[source.tab];
-  if (!tabRef && config.tabs) {
-    tabRef = Object.values(config.tabs).find(ref => ref.tab === source.tab);
-  }
-  if (tabRef) {
-    sheetId = config.sheets?.[tabRef.sheet] ?? tabRef.sheet_id ?? sheetId;
-    tab = tabRef.tab ?? tab;
-    gid = tabRef.gid ?? gid;
-  } else if (source.sheet && !sheetId) {
-    sheetId = config.sheets?.[source.sheet] ?? sheetId;
-  }
-
-  return { sheetId, tab, gid };
+/** Get the display label of a column spec (string or object with .label). */
+function colLabel(colSpec) {
+  return typeof colSpec === 'string' ? colSpec : (colSpec.label ?? '');
 }
 
-function isDisplayColumnObject(col) {
-  return typeof col === 'object' && col !== null && Array.isArray(col.columns);
-}
+// ── Display value formatting ──────────────────────────────────
 
 function formatDisplayValue(row, colSpec) {
-  if (typeof colSpec === 'string') {
-    return row[colSpec] ?? '';
-  }
-  if (isDisplayColumnObject(colSpec)) {
+  if (typeof colSpec === 'string') return row[colSpec] ?? '';
+
+  // Multi-column join (e.g. date from day + month)
+  if (Array.isArray(colSpec.columns)) {
     const values = colSpec.columns
-      .map(column => row[column] ?? '')
-      .filter(value => value !== '')
-      .map(value => {
-        if (colSpec.format === 'date' && /^\d+$/.test(String(value))) {
-          return String(value).padStart(2, '0');
-        }
-        return value;
-      });
+      .map(c => row[c] ?? '')
+      .filter(v => v !== '')
+      .map(v => (colSpec.format === 'date' && /^\d+$/.test(String(v)))
+        ? String(v).padStart(2, '0') : v);
     return values.length === 0 ? '' : values.join(colSpec.join ?? ' ');
   }
-  if (colSpec && typeof colSpec === 'object' && colSpec.template) {
-    let text = colSpec.template;
-    const column = colSpec.column;
-    const value = row[column] ?? '';
-    text = text.replace(new RegExp(`\\{${column}\\}`, 'g'), value);
-    return text;
+
+  // Template string (e.g. "хата №{№}")
+  if (colSpec.template) {
+    return colSpec.template.replace(
+      new RegExp(`\\{${colSpec.column}\\}`, 'g'),
+      row[colSpec.column] ?? ''
+    );
   }
+
   return '';
 }
 
-/**
- * Match rows from a source against a target person ID.
- * Returns { matchedRows, tableRows } where tableRows includes full household if configured.
- */
-function matchSource(source, allRows, targetId) {
-  const targetStr = String(targetId);
+// ── Matching ──────────────────────────────────────────────────
 
-  // Find which rows contain the person in any role column
-  const matchedSet = new Set();
-  const matchedRoles = new Map(); // rowIndex -> role label
+function matchSource(source, allRows, targetId) {
+  const targetStr   = String(targetId);
+  const matchedSet  = new Set();
+  const matchedRoles = new Map();
 
   allRows.forEach((row, idx) => {
     for (const { column, role } of source.roles) {
-      const cellVal = normaliseId(row[column]);
-      if (cellVal === targetStr) {
+      if (normaliseId(row[column]) === targetStr) {
         matchedSet.add(idx);
         matchedRoles.set(idx, role);
         break;
@@ -206,11 +169,11 @@ function matchSource(source, allRows, targetId) {
 
   if (matchedSet.size === 0) return null;
 
-  // Expand to household if household_column is set
   let displayIndices;
   if (source.household_column) {
     const householdValues = new Set(
-      [...matchedSet].map(i => normaliseId(allRows[i][source.household_column]))
+      [...matchedSet]
+        .map(i => normaliseId(allRows[i][source.household_column]))
         .filter(v => v !== '')
     );
     displayIndices = allRows
@@ -218,139 +181,57 @@ function matchSource(source, allRows, targetId) {
       .filter(i => householdValues.has(normaliseId(allRows[i][source.household_column])));
   } else {
     displayIndices = [...matchedSet].sort((a, b) => {
-      const yearA = parseInt(allRows[a]['год'] ?? allRows[a]['year'] ?? 0, 10);
-      const yearB = parseInt(allRows[b]['год'] ?? allRows[b]['year'] ?? 0, 10);
-      return yearA - yearB;
+      const yr = r => parseInt(allRows[r]['год'] ?? allRows[r]['year'] ?? 0, 10);
+      return yr(a) - yr(b);
     });
   }
 
   return { displayIndices, matchedSet, matchedRoles };
 }
 
-// ── Rendering ────────────────────────────────────────────────
+// ── DOM helpers ───────────────────────────────────────────────
 
-/**
- * Build a Google Sheets deep-link URL.
- * rowIdx is 0-based index into allRows (excluding header).
- * Sheet row = rowIdx + 2 (1 for header row, 1 for 1-based).
- */
-function sheetRowUrl(source, rowIdx, config) {
-  const { sheetId, gid } = resolveSourceSheetTab(source, config);
-  if (!sheetId || !gid) return null;
-  const sheetRow = rowIdx + 2; // +1 header, +1 for 1-based
-  return `https://docs.google.com/spreadsheets/d/${sheetId}/edit#gid=${gid}&range=A${sheetRow}`;
+function makeElement(tag, { className, textContent, href, target, rel, title } = {}) {
+  const el = document.createElement(tag);
+  if (className)   el.className   = className;
+  if (textContent !== undefined) el.textContent = textContent;
+  if (href)        el.href        = href;
+  if (target)      el.target      = target;
+  if (rel)         el.rel         = rel;
+  if (title)       el.title       = title;
+  return el;
 }
 
 function makeLinkIcon(url) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.target = '_blank';
-  a.rel = 'noopener noreferrer';
-  a.className = 'row-link';
-  a.title = 'Адкрыць у Google Sheets';
-  a.textContent = '↗';
-  return a;
-}
-
-function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, highlightMatched = false, currentSearchId = null) {
-  const colMap = resolveColumnMap(source, config);
-  const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
-  const householdCols = source.household_columns || [];
-  const showRole = resolveDisplayColumns(source, config, colMap).includes('_role_');
-  const hasGid   = !!resolveSourceSheetTab(source, config).gid;
-  const isHousehold = !!source.household_column;
-
-  const wrap = document.createElement('div');
-  wrap.className = 'record-table-wrap';
-
-  if (!isHousehold) {
-    // Non-household: single table
-    const table = createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, true, config, highlightMatched, currentSearchId);
-    wrap.appendChild(table);
-    return wrap;
-  }
-
-  // Household mode: group by household
-  const householdGroups = new Map();
-  displayIndices.forEach(rowIdx => {
-    const row = allRows[rowIdx];
-    const hVal = normaliseId(row[source.household_column]);
-    if (!householdGroups.has(hVal)) householdGroups.set(hVal, []);
-    householdGroups.get(hVal).push(rowIdx);
+  return makeElement('a', {
+    href: url, target: '_blank', rel: 'noopener noreferrer',
+    className: 'row-link', title: 'Адкрыць у Google Sheets', textContent: '↗',
   });
-
-  // For each household
-  for (const [hVal, rowIndices] of householdGroups) {
-    const householdDiv = document.createElement('div');
-    householdDiv.className = 'household-section';
-
-    // Household info
-    if (householdCols.length > 0) {
-      const firstRowIdx = rowIndices[0];
-      const firstRow = allRows[firstRowIdx];
-      const tokens = householdCols
-        .map(col => formatDisplayValue(firstRow, col))
-        .filter(v => v);
-
-      if (tokens.length > 0) {
-        const infoDiv = document.createElement('div');
-        infoDiv.className = 'household-info';
-
-        const text = document.createElement('span');
-        text.textContent = tokens.join(',  ');
-        infoDiv.appendChild(text);
-
-        if (hasGid) {
-          const url = sheetRowUrl(source, firstRowIdx, config);
-          if (url) infoDiv.appendChild(makeLinkIcon(url));
-        }
-
-        householdDiv.appendChild(infoDiv);
-      }
-    }
-
-    // Person table — hasLink=true so every row gets its own ↗ link
-    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, true, config, highlightMatched, currentSearchId);
-    householdDiv.appendChild(table);
-
-    wrap.appendChild(householdDiv);
-  }
-
-  return wrap;
 }
 
-/**
- * Resolve the links map for a source (from config.columns or inline).
- * Returns an object like { "имя отца": "#отца" } or null.
- */
-function resolveLinks(source, config) {
-  if (source.links) return source.links;
-  if (typeof source.display_columns === 'string' && config.columns?.[source.display_columns]) {
-    return config.columns[source.display_columns].links ?? null;
-  }
-  return null;
+function sheetRowUrl(source, rowIdx, config) {
+  const { sheetId, gid } = resolveSourceMeta(source, config);
+  if (!sheetId || !gid) return null;
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/edit#gid=${gid}&range=A${rowIdx + 2}`;
 }
 
+// ── Cell rendering ────────────────────────────────────────────
+
 /**
- * Render a cell value into a td, dimming any /…/ segments.
- * If linkedId is provided and non-empty:
- *   - if it matches currentSearchId → mark cell as current person (no link)
- *   - otherwise → render a small → button after the text
+ * Render a cell value into a td element.
+ * - Dims /…/ segments.
+ * - If linkedId matches currentSearchId: marks cell as current person.
+ * - Otherwise: appends a small → nav button.
  */
 function renderCellValue(td, val, linkedId = null, currentSearchId = null) {
   const buildText = (container) => {
-    if (!val || !val.includes('/')) {
+    if (!val?.includes('/')) {
       container.appendChild(document.createTextNode(val || ''));
       return;
     }
-    const parts = val.split(/(\/[^/]*\/)/);
-    if (parts.length === 1) { container.appendChild(document.createTextNode(val)); return; }
-    parts.forEach(part => {
+    val.split(/(\/[^/]*\/)/).forEach(part => {
       if (/^\/[^/]*\/$/.test(part)) {
-        const span = document.createElement('span');
-        span.className = 'cell-dim';
-        span.textContent = part;
-        container.appendChild(span);
+        container.appendChild(makeElement('span', { className: 'cell-dim', textContent: part }));
       } else if (part) {
         container.appendChild(document.createTextNode(part));
       }
@@ -359,155 +240,132 @@ function renderCellValue(td, val, linkedId = null, currentSearchId = null) {
 
   buildText(td);
 
-  if (linkedId) {
-    if (String(linkedId) === String(currentSearchId)) {
-      td.classList.add('cell-current-person');
-    } else {
-      // Wrap existing content + button in a flex div
-      const wrap = document.createElement('div');
-      wrap.className = 'cell-nav-wrap';
-      const textSpan = document.createElement('span');
-      textSpan.className = 'cell-text';
-      // Move all existing child nodes into textSpan
-      while (td.firstChild) textSpan.appendChild(td.firstChild);
-      wrap.appendChild(textSpan);
-      const btn = document.createElement('a');
-      btn.href = `?id=${linkedId}`;
-      btn.className = 'cell-nav-btn';
-      btn.title = `Перайсці да асобы #${linkedId}`;
-      btn.textContent = '→';
-      wrap.appendChild(btn);
-      td.appendChild(wrap);
-    }
+  if (!linkedId) return;
+
+  if (String(linkedId) === String(currentSearchId)) {
+    td.classList.add('cell-current-person');
+    return;
   }
+
+  // Wrap text + button in a flex container
+  const wrap = makeElement('div', { className: 'cell-nav-wrap' });
+  const textSpan = makeElement('span', { className: 'cell-text' });
+  while (td.firstChild) textSpan.appendChild(td.firstChild);
+  wrap.appendChild(textSpan);
+  wrap.appendChild(makeElement('a', {
+    className: 'cell-nav-btn',
+    href: `?id=${linkedId}`,
+    title: `Перайсці да асобы #${linkedId}`,
+    textContent: '→',
+  }));
+  td.appendChild(wrap);
 }
 
-function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, hasLink = true, config, highlightMatched = false, currentSearchId = null) {
-  const colMap = resolveColumnMap(source, config);
-  const displayCols = resolveDisplayColumns(source, config, colMap).filter(c => c !== '_role_');
-  const showRole = resolveDisplayColumns(source, config, colMap).includes('_role_');
-  const hasGid   = !!resolveSourceSheetTab(source, config).gid && hasLink;
-  const links     = resolveLinks(source, config); // { displayColName -> idColName }
+// ── Table rendering ───────────────────────────────────────────
+
+function createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, {
+  hasLink = true,
+  highlightMatched = false,
+  currentSearchId = null,
+} = {}) {
+  const allCols    = resolveDisplayColumns(source, config);
+  const showRole   = allCols.some(c => c === '_role_');
+  const dataCols   = allCols.filter(c => c !== '_role_');
+  const links      = resolveLinks(source, config);
+  const { gid }    = resolveSourceMeta(source, config);
+  const hasGid     = !!gid && hasLink;
+  const isRevision = !!source.household_column;
 
   const table = document.createElement('table');
   table.className = 'record-table';
 
-  // ── Colgroup: fixed widths per column type ──────────────
+  // ── Colgroup ──
   const colgroup = document.createElement('colgroup');
-  if (hasGid && !source.household_column) {
-    const col = document.createElement('col'); col.style.width = '36px'; colgroup.appendChild(col);
-  }
-  if (showRole) {
-    const col = document.createElement('col'); col.style.width = '80px'; colgroup.appendChild(col);
-  }
-  if (source.household_column) {
-    const col = document.createElement('col'); col.style.width = '36px'; colgroup.appendChild(col);
-  }
-  displayCols.forEach(colSpec => {
-    const col = document.createElement('col');
-    const name = (typeof colSpec === 'string' ? colSpec : (colSpec.label ?? '')).toLowerCase();
-    if (/возраст|день|месяц|лист/.test(name))   { col.style.width = '40px'; }
-    else if (/^№|пред/.test(name))               { col.style.width = '40px'; }
-    else if (/тип|пометка/.test(name))           { col.style.width = '55px'; }
-    else if (/изменения/.test(name))             { col.style.width = '65px'; }
-    else if (/родство/.test(name))               { col.style.width = '80px'; }
-    else if (/отчество/.test(name))              { col.style.width = '90px'; }
-    else if (/имя|фамили|н\.п/.test(name))       { col.style.width = '90px'; }
-    else if (/комментари/.test(name))            { col.style.width = '160px'; }
-    else                                         { col.style.width = '80px'; }
-    colgroup.appendChild(col);
+  const addCol = w => { const c = document.createElement('col'); c.style.width = w; colgroup.appendChild(c); };
+
+  if (hasGid && !isRevision) addCol('36px');
+  if (showRole)               addCol('80px');
+  if (isRevision)             addCol('36px');
+
+  dataCols.forEach(col => {
+    const name = colLabel(col).toLowerCase();
+    if (/возраст|день|месяц|лист/.test(name)) addCol('40px');
+    else if (/^№|пред/.test(name))            addCol('40px');
+    else if (/тип|пометка/.test(name))        addCol('55px');
+    else if (/изменения/.test(name))          addCol('65px');
+    else if (/родство/.test(name))            addCol('80px');
+    else if (/отчество/.test(name))           addCol('90px');
+    else if (/имя|фамили|н\.п/.test(name))    addCol('90px');
+    else if (/комментари/.test(name))         addCol('160px');
+    else                                      addCol('80px');
   });
   table.appendChild(colgroup);
 
-  // Header
+  // ── Header ──
   const thead = table.createTHead();
   const headerRow = thead.insertRow();
-  if (hasGid && !source.household_column) {
-    const th = document.createElement('th');
-    th.className = 'col-link';
-    th.textContent = '';
+  const addTh = (text, cls) => {
+    const th = makeElement('th', { textContent: text });
+    if (cls) th.className = cls;
     headerRow.appendChild(th);
-  }
-  if (showRole) {
-    const th = document.createElement('th');
-    th.textContent = 'Роля';
-    headerRow.appendChild(th);
-  }
-  // Extra header for internal person link column (revisions only)
-  if (source.household_column) {
-    const th = document.createElement('th');
-    th.className = 'col-link';
-    th.textContent = '';
-    headerRow.appendChild(th);
-  }
-  displayCols.forEach(col => {
-    const th = document.createElement('th');
-    th.textContent = typeof col === 'string' ? col : col.label;
-    headerRow.appendChild(th);
-  });
+  };
+  if (hasGid && !isRevision) addTh('', 'col-link');
+  if (showRole)               addTh('Роля');
+  if (isRevision)             addTh('', 'col-link');
+  dataCols.forEach(col => addTh(colLabel(col)));
 
-  // Body
+  // ── Body ──
   const tbody = table.createTBody();
-  displayIndices.forEach((rowIdx) => {
+  displayIndices.forEach(rowIdx => {
     const row = allRows[rowIdx];
     const isMatched = matchedSet.has(rowIdx);
-
     const tr = tbody.insertRow();
     if (isMatched && highlightMatched) tr.className = 'matched-row';
 
-    // ── Link cell (sheet link) — only for non-revision sources ──
-    if (hasGid && !source.household_column) {
+    // Sheet link (non-revision only)
+    if (hasGid && !isRevision) {
       const td = tr.insertCell();
       td.className = 'col-link';
       const url = sheetRowUrl(source, rowIdx, config);
       if (url) td.appendChild(makeLinkIcon(url));
     }
 
-    // ── Internal person link cell (revision only — reads ID from role columns) ──
-    if (source.household_column) {
-      const td = tr.insertCell();
-      td.className = 'col-link';
-      // Find the person ID from any role column that has a value.
-      // Also try trimmed key variants to handle CSV whitespace issues.
-      let personId = null;
-      for (const { column } of source.roles) {
-        // Try exact key first, then scan all keys for a trimmed match
-        let val = normaliseId(row[column]);
-        if (!val) {
-          const trimmedCol = column.trim();
-          const matchedKey = Object.keys(row).find(k => k.trim() === trimmedCol);
-          if (matchedKey) val = normaliseId(row[matchedKey]);
-        }
-        if (val) { personId = val; break; }
-      }
-      if (personId) {
-        const a = document.createElement('a');
-        a.href = `?id=${personId}`;
-        a.className = 'row-link person-link';
-        a.title = `Перайсці да асобы #${personId}`;
-        a.textContent = '#';
-        td.appendChild(a);
-      }
-    }
-
-    // ── Role cell ──
+    // Role badge
     if (showRole) {
       const td = tr.insertCell();
       if (isMatched) {
-        const badge = document.createElement('span');
-        badge.className = 'role-badge';
-        badge.textContent = matchedRoles.get(rowIdx) ?? '—';
-        td.appendChild(badge);
+        td.appendChild(makeElement('span', {
+          className: 'role-badge',
+          textContent: matchedRoles.get(rowIdx) ?? '—',
+        }));
       }
     }
 
-    // ── Data cells ──
-    displayCols.forEach(col => {
+    // Internal person link (revision only)
+    if (isRevision) {
+      const td = tr.insertCell();
+      td.className = 'col-link';
+      let personId = null;
+      for (const { column } of source.roles) {
+        const val = normaliseId(row[column])
+          || normaliseId(row[Object.keys(row).find(k => k.trim() === column.trim()) ?? '']);
+        if (val) { personId = val; break; }
+      }
+      if (personId) {
+        td.appendChild(makeElement('a', {
+          href: `?id=${personId}`,
+          className: 'row-link person-link',
+          title: `Перайсці да асобы #${personId}`,
+          textContent: '#',
+        }));
+      }
+    }
+
+    // Data cells
+    dataCols.forEach(col => {
       const td = tr.insertCell();
       const val = formatDisplayValue(row, col);
-      const colLabel = typeof col === 'string' ? col : (col.label ?? '');
-      const idCol = links?.[colLabel];
-      const linkedId = idCol ? normaliseId(row[idCol]) : null;
+      const linkedId = links?.[colLabel(col)] ? normaliseId(row[links[colLabel(col)]]) : null;
       renderCellValue(td, val, linkedId || null, currentSearchId);
     });
   });
@@ -515,70 +373,91 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   return table;
 }
 
-function renderSection(section, results, config, currentSearchId = null) {
-  const hasAny = results.some(r => r !== null);
+function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, highlightMatched, currentSearchId) {
+  const wrap = makeElement('div', { className: 'record-table-wrap' });
 
-  const div = document.createElement('div');
-  div.className = 'result-section';
-  div.id = `section-${section.id}`;
-
-  const header = document.createElement('div');
-  header.className = 'section-header';
-
-  const title = document.createElement('span');
-  title.className = 'section-title';
-  title.textContent = `${section.icon}  ${section.label}`;
-
-  const count = document.createElement('span');
-  count.className = 'section-count';
-
-  if (!hasAny) {
-    count.textContent = 'запісаў не знойдзена';
-  } else {
-    const n = results.filter(r => r !== null).length;
-    count.textContent = `${n} крыніц(а) з запісамі`;
+  if (!source.household_column) {
+    wrap.appendChild(createPersonTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, {
+      highlightMatched, currentSearchId,
+    }));
+    return wrap;
   }
 
-  header.appendChild(title);
-  header.appendChild(count);
+  // Group rows by household value
+  const householdGroups = new Map();
+  displayIndices.forEach(rowIdx => {
+    const hVal = normaliseId(allRows[rowIdx][source.household_column]);
+    if (!householdGroups.has(hVal)) householdGroups.set(hVal, []);
+    householdGroups.get(hVal).push(rowIdx);
+  });
+
+  const { gid } = resolveSourceMeta(source, config);
+
+  for (const [, rowIndices] of householdGroups) {
+    const householdDiv = makeElement('div', { className: 'household-section' });
+
+    const householdCols = source.household_columns ?? [];
+    if (householdCols.length > 0) {
+      const firstRow = allRows[rowIndices[0]];
+      const tokens = householdCols.map(col => formatDisplayValue(firstRow, col)).filter(v => v);
+      if (tokens.length > 0) {
+        const infoDiv = makeElement('div', { className: 'household-info' });
+        infoDiv.appendChild(makeElement('span', { textContent: tokens.join(',  ') }));
+        if (gid) {
+          const url = sheetRowUrl(source, rowIndices[0], config);
+          if (url) infoDiv.appendChild(makeLinkIcon(url));
+        }
+        householdDiv.appendChild(infoDiv);
+      }
+    }
+
+    householdDiv.appendChild(createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, config, {
+      highlightMatched, currentSearchId,
+    }));
+    wrap.appendChild(householdDiv);
+  }
+
+  return wrap;
+}
+
+// ── Section rendering ─────────────────────────────────────────
+
+function renderSection(section, results, config, currentSearchId) {
+  const hasAny = results.some(r => r !== null);
+
+  const div = makeElement('div', { className: 'result-section' });
+  div.id = `section-${section.id}`;
+
+  const header = makeElement('div', { className: 'section-header' });
+  header.appendChild(makeElement('span', { className: 'section-title', textContent: `${section.icon}  ${section.label}` }));
+  const n = results.filter(r => r !== null).length;
+  header.appendChild(makeElement('span', {
+    className: 'section-count',
+    textContent: hasAny ? `${n} крыніц(а) з запісамі` : 'запісаў не знойдзена',
+  }));
   div.appendChild(header);
 
   if (!hasAny) {
-    const empty = document.createElement('p');
-    empty.className = 'section-empty';
-    empty.textContent = 'Запісаў у гэтым раздзеле не знойдзена.';
-    div.appendChild(empty);
+    div.appendChild(makeElement('p', { className: 'section-empty', textContent: 'Запісаў у гэтым раздзеле не знойдзена.' }));
     return div;
   }
 
-  const body = document.createElement('div');
-  body.className = 'result-section-body';
-
-  section.sources.forEach((source, idx) => {
-    const result = results[idx];
+  const body = makeElement('div', { className: 'result-section-body' });
+  results.forEach((result, idx) => {
     if (!result) return;
-
-    const group = document.createElement('div');
-    group.className = 'source-group';
-
-    const label = document.createElement('div');
-    label.className = 'source-label';
-    label.textContent = source.label;
-    group.appendChild(label);
-
+    const source = section.sources[idx];
+    const group  = makeElement('div', { className: 'source-group' });
+    group.appendChild(makeElement('div', { className: 'source-label', textContent: source.label }));
     const { displayIndices, matchedSet, matchedRoles, allRows } = result;
-    const tableWrap = renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, section.highlight_matched ?? false, currentSearchId);
-    group.appendChild(tableWrap);
-
+    group.appendChild(renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, config, section.highlight_matched ?? false, currentSearchId));
     body.appendChild(group);
   });
 
   div.appendChild(body);
-
   return div;
 }
 
-// ── Main search ──────────────────────────────────────────────
+// ── UI helpers ────────────────────────────────────────────────
 
 function setLoading(msg) {
   document.getElementById('loading-section').classList.remove('hidden');
@@ -593,10 +472,11 @@ function hideLoading() {
 
 function showError(msg) {
   hideLoading();
-  const sec = document.getElementById('error-section');
-  sec.classList.remove('hidden');
+  document.getElementById('error-section').classList.remove('hidden');
   document.getElementById('error-message').textContent = msg;
 }
+
+// ── Main search ───────────────────────────────────────────────
 
 async function runSearch(personId) {
   if (!personId || isNaN(personId) || personId <= 0) {
@@ -604,69 +484,59 @@ async function runSearch(personId) {
     return;
   }
 
-  // Update URL without reloading the page
   history.pushState(null, '', `?id=${personId}`);
-
   setLoading('Пошук ва ўсіх крыніцах…');
+  document.getElementById('results-body').innerHTML = '';
 
   const config = GENEALOGY_CONFIG;
-  const resultsBody = document.getElementById('results-body');
-  resultsBody.innerHTML = '';
 
-  // ── Collect all unique sources and fire fetches simultaneously ──
-  const allSources = config.sections.flatMap(s => s.sources);
-  const uniqueKeys = new Set();
+  // Deduplicate sources by sheetId::gid and fire all fetches in parallel
+  const uniqueKeys = new Set(
+    config.sections.flatMap(s => s.sources).map(source => {
+      const { sheetId, gid } = resolveSourceMeta(source, config);
+      return `${sheetId}::${gid}`;
+    })
+  );
 
-  for (const source of allSources) {
-    const { sheetId, gid } = resolveSourceSheetTab(source, config);
-    const key = `${sheetId}::${gid}`;
-    if (!uniqueKeys.has(key)) {
-      uniqueKeys.add(key);
-      // Only fetch if not already cached/in-flight
-      if (!SHEET_CACHE[key]) {
-        SHEET_CACHE[key] = fetchSheetTab(sheetId, gid)
-          .catch(err => { console.warn(`Error fetching ${key}:`, err); return []; });
-      }
+  for (const key of uniqueKeys) {
+    if (!SHEET_CACHE[key]) {
+      const [sheetId, gid] = key.split('::');
+      SHEET_CACHE[key] = fetchSheetTab(sheetId, gid)
+        .catch(err => { console.warn(`Error fetching ${key}:`, err); return []; });
     }
   }
 
-  // Wait for all fetches in parallel
-  const cachedCount = [...uniqueKeys].filter(k => SHEET_CACHE[k]).length;
   setLoading(`Загрузка ${uniqueKeys.size} крыніц…`);
-  // Wait only for the current batch — already-resolved promises return instantly
   await Promise.all([...uniqueKeys].map(k => SHEET_CACHE[k]));
 
-  // ── Now match and render ──
+  // Match each source against the person ID
   const totalSources = config.sections.reduce((n, s) => n + s.sources.length, 0);
   let done = 0;
   const allSectionResults = [];
 
   for (const section of config.sections) {
     const sectionResults = [];
-
     for (const source of section.sources) {
-      const { sheetId, gid } = resolveSourceSheetTab(source, config);
-      const key = `${sheetId}::${gid}`;
-      let allRows = await SHEET_CACHE[key];
-      done++;
-      setLoading(`Пошук… (${done} / ${totalSources})`);
+      const { sheetId, gid } = resolveSourceMeta(source, config);
+      setLoading(`Пошук… (${++done} / ${totalSources})`);
 
+      let allRows = await SHEET_CACHE[`${sheetId}::${gid}`];
       if (allRows.length === 0) { sectionResults.push(null); continue; }
 
       const colMap = resolveColumnMap(source, config);
-      if (colMap) allRows = renameColumns(allRows, colMap);
+      if (colMap) allRows = applyColumnMap(allRows, colMap);
 
       const match = matchSource(source, allRows, personId);
       sectionResults.push(match ? { ...match, allRows } : null);
     }
-
     allSectionResults.push({ section, sectionResults });
   }
 
   hideLoading();
 
-  // ── Build summary pills + render sections ──
-  const summaryEl = document.getElementById('results-summary');
+  // Render summary pills and section cards
+  const summaryEl  = document.getElementById('results-summary');
+  const resultsBody = document.getElementById('results-body');
   summaryEl.innerHTML = '';
   let totalFound = 0;
 
@@ -674,20 +544,22 @@ async function runSearch(personId) {
     const hasData = sectionResults.some(r => r !== null);
     if (hasData) totalFound++;
 
-    const pill = document.createElement('a');
-    pill.className = 'summary-pill' + (hasData ? ' has-data' : '');
-    pill.textContent = `${section.icon} ${section.label}`;
-    pill.href = `#section-${section.id}`;
-    summaryEl.appendChild(pill);
-
-    const sectionEl = renderSection(section, sectionResults, config, personId);
-    resultsBody.appendChild(sectionEl);
+    summaryEl.appendChild(makeElement('a', {
+      className: 'summary-pill' + (hasData ? ' has-data' : ''),
+      textContent: `${section.icon} ${section.label}`,
+      href: `#section-${section.id}`,
+    }));
+    resultsBody.appendChild(renderSection(section, sectionResults, config, personId));
   }
 
   document.getElementById('results-id').textContent = `#${personId}`;
   document.getElementById('results').classList.remove('hidden');
 
-  // Update cache status
+  if (totalFound === 0) {
+    resultsBody.innerHTML = `<p class="section-empty" style="padding:1rem 0">Запісаў для асобы <strong>${personId}</strong> не знойдзена ні ў адной крыніцы.</p>`;
+  }
+
+  // Update cache status line
   const statusEl = document.getElementById('cache-status');
   if (statusEl) {
     const n = Object.keys(SHEET_CACHE).length;
@@ -697,19 +569,14 @@ async function runSearch(personId) {
       statusEl.textContent = 'Кэш ачышчаны — наступны пошук загрузіць усе крыніцы нанова.';
     });
   }
-
-  if (totalFound === 0) {
-    resultsBody.innerHTML = `<p class="section-empty" style="padding:1rem 0">Запісаў для асобы <strong>${personId}</strong> не знойдзена ні ў адной крыніцы.</p>`;
-  }
 }
 
-// ── Event wiring ─────────────────────────────────────────────
+// ── Event wiring ──────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  const btn   = document.getElementById('search-btn');
   const input = document.getElementById('person-id');
 
-  btn.addEventListener('click', () => {
+  document.getElementById('search-btn').addEventListener('click', () => {
     runSearch(parseInt(input.value, 10));
   });
 
@@ -717,18 +584,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') runSearch(parseInt(input.value, 10));
   });
 
-  // Scroll to top button
+  // Re-run search on browser back/forward
+  window.addEventListener('popstate', () => {
+    const id = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+    if (id > 0) { input.value = id; runSearch(id); }
+  });
+
+  // Scroll-to-top button
   const scrollBtn = document.getElementById('scroll-top');
-  window.addEventListener('scroll', () => {
-    scrollBtn.classList.toggle('visible', window.scrollY > 400);
-  });
-  scrollBtn.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-  const params = new URLSearchParams(window.location.search);
-  const urlId  = parseInt(params.get('id'), 10);
-  if (urlId > 0) {
-    input.value = urlId;
-    runSearch(urlId);
-  }
+  window.addEventListener('scroll', () => scrollBtn.classList.toggle('visible', window.scrollY > 400));
+  scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // Auto-search from URL on page load
+  const urlId = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+  if (urlId > 0) { input.value = urlId; runSearch(urlId); }
 });

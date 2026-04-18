@@ -1,24 +1,27 @@
 /* ─── Variables ─────────────────────────────────────────── */
 :root {
-  --bg:          #f0f2f8;
-  --surface:     #ffffff;
-  --surface2:    #f7f8fc;
-  --border:      #e8eaf2;
-  --text:        #1a1d2e;
-  --text-mid:    #5a607a;
-  --text-faint:  #9ba3be;
-  --accent:      #4f6ef7;
-  --accent-dark: #3a57e8;
-  --accent-soft: rgba(79,110,247,0.08);
-  --accent-soft2:rgba(79,110,247,0.15);
-  --matched:     rgba(79,110,247,0.06);
-  --matched-hov: rgba(79,110,247,0.1);
-  --shadow-sm:   0 1px 4px rgba(30,40,100,0.06);
-  --shadow-md:   0 4px 16px rgba(30,40,100,0.08);
-  --radius:      12px;
-  --radius-sm:   8px;
-  --radius-xs:   6px;
-  --font:        'Inter', 'Segoe UI', system-ui, sans-serif;
+  --bg:           #f0f2f8;
+  --surface:      #ffffff;
+  --surface2:     #f7f8fc;
+  --surface3:     #e2e6f3;  /* table header background */
+  --border:       #e8eaf2;
+  --text:         #1a1d2e;
+  --text-mid:     #5a607a;
+  --text-faint:   #9ba3be;
+  --accent:       #4f6ef7;
+  --accent-dark:  #3a57e8;
+  --accent-soft:  rgba(79,110,247,0.08);
+  --accent-soft2: rgba(79,110,247,0.15);
+  --matched:      rgba(79,110,247,0.22);
+  --matched-hov:  rgba(79,110,247,0.30);
+  --household-bg: #eef1fd;  /* household info bar */
+  --source-label: #4f6ef7;  /* source label bar — same as accent */
+  --shadow-sm:    0 1px 4px rgba(30,40,100,0.06);
+  --shadow-md:    0 4px 16px rgba(30,40,100,0.08);
+  --radius:       12px;
+  --radius-sm:    8px;
+  --radius-xs:    6px;
+  --font:         'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 
 /* ─── Reset & Base ──────────────────────────────────────── */
@@ -358,7 +361,7 @@ button#search-btn:active { transform: translateY(1px); }
   box-sizing: border-box;
   text-align: center;
   padding: 0.6rem 1.25rem;
-  background: #eef1fd;
+  background: var(--household-bg);
   border-bottom: 1px solid var(--border);
   font-size: 0.85rem;
   font-weight: 600;
@@ -399,7 +402,7 @@ table.record-table {
 }
 
 table.record-table thead tr {
-  background: #e2e6f3;
+  background: var(--surface3);
   border-bottom: 2px solid var(--border);
 }
 
@@ -415,22 +418,20 @@ table.record-table th {
   word-break: break-word;
   vertical-align: bottom;
   overflow: hidden;
-  border-right: 1px solid var(--border);
 }
-table.record-table th:last-child { border-right: none; }
+table.record-table th:not(:last-child) { border-right: 1px solid var(--border); }
 
 table.record-table td {
   padding: 0.45rem 0.6rem;
   vertical-align: middle;
   border-bottom: 1px solid var(--border);
-  border-right: 1px solid var(--border);
   color: var(--text);
   line-height: 1.35;
   white-space: normal;
   word-break: break-word;
   overflow: hidden;
 }
-table.record-table td:last-child { border-right: none; }
+table.record-table td:not(:last-child) { border-right: 1px solid var(--border); }
 
 table.record-table tbody tr:last-child td { border-bottom: none; }
 table.record-table tbody tr:hover { background: var(--surface2); }
@@ -485,7 +486,7 @@ td.cell-current-person {
 
 /* Matched row highlight — vivid */
 table.record-table tbody tr.matched-row {
-  background: rgba(79,110,247,0.22);
+  background: var(--matched);
 }
 table.record-table tbody tr.matched-row td {
   color: var(--text);
@@ -495,7 +496,7 @@ table.record-table tbody tr.matched-row td:first-child {
   box-shadow: inset 4px 0 0 var(--accent);
 }
 table.record-table tbody tr.matched-row:hover {
-  background: rgba(79,110,247,0.30);
+  background: var(--matched-hov);
 }
 
 /* Role badge */
