@@ -267,6 +267,8 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   hasLink = true,
   highlightMatched = false,
   currentSearchId = null,
+  householdInfoText = null,
+  householdLinkUrl  = null,
 } = {}) {
   const allCols    = resolveDisplayColumns(source, config);
   const showRole   = allCols.some(c => c === '_role_');
@@ -275,6 +277,11 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   const { gid }    = resolveSourceMeta(source, config);
   const hasGid     = !!gid && hasLink;
   const isRevision = !!source.household_column;
+
+  const totalCols = dataCols.length
+    + (hasGid && !isRevision ? 1 : 0)
+    + (showRole   ? 1 : 0)
+    + (isRevision ? 1 : 0);
 
   const table = document.createElement('table');
   table.className = 'record-table';
@@ -303,6 +310,18 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
 
   // ── Header ──
   const thead = table.createTHead();
+
+  // Household info row (spans all columns, scrolls with table)
+  if (householdInfoText) {
+    const infoRow = thead.insertRow();
+    infoRow.className = 'household-info-row';
+    const td = infoRow.insertCell();
+    td.colSpan = totalCols;
+    td.className = 'household-info';
+    td.appendChild(makeElement('span', { textContent: householdInfoText }));
+    if (householdLinkUrl) td.appendChild(makeLinkIcon(householdLinkUrl));
+  }
+
   const headerRow = thead.insertRow();
   const addTh = (text, cls) => {
     const th = makeElement('th', { textContent: text });
@@ -394,27 +413,23 @@ function renderTable(source, allRows, displayIndices, matchedSet, matchedRoles, 
   const { gid } = resolveSourceMeta(source, config);
 
   for (const [, rowIndices] of householdGroups) {
-    const householdDiv = makeElement('div', { className: 'household-section' });
-
     const householdCols = source.household_columns ?? [];
+    let householdInfoText = null;
+    let householdLinkUrl  = null;
+
     if (householdCols.length > 0) {
       const firstRow = allRows[rowIndices[0]];
       const tokens = householdCols.map(col => formatDisplayValue(firstRow, col)).filter(v => v);
       if (tokens.length > 0) {
-        const infoDiv = makeElement('div', { className: 'household-info' });
-        infoDiv.appendChild(makeElement('span', { textContent: tokens.join(',  ') }));
-        if (gid) {
-          const url = sheetRowUrl(source, rowIndices[0], config);
-          if (url) infoDiv.appendChild(makeLinkIcon(url));
-        }
-        householdDiv.appendChild(infoDiv);
+        householdInfoText = tokens.join(',  ');
+        if (gid) householdLinkUrl = sheetRowUrl(source, rowIndices[0], config);
       }
     }
 
-    householdDiv.appendChild(createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, config, {
-      highlightMatched, currentSearchId,
-    }));
-    wrap.appendChild(householdDiv);
+    const table = createPersonTable(source, allRows, rowIndices, matchedSet, matchedRoles, config, {
+      highlightMatched, currentSearchId, householdInfoText, householdLinkUrl,
+    });
+    wrap.appendChild(table);
   }
 
   return wrap;

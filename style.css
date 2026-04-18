@@ -345,44 +345,29 @@ button#search-btn:active { transform: translateY(1px); }
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
-/* ─── Household blocks ──────────────────────────────────── */
-.household-section {
-  margin-top: 1.25rem;
-  border-radius: var(--radius-sm);
-  /* overflow must NOT be hidden — kills horizontal scroll on mobile */
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-}
-.household-section:first-of-type {
-  margin-top: 0;
+/* ─── Household info (rendered as a thead row inside the table) ─── */
+tr.household-info-row + tr th {
+  /* column header row that follows the info row */
+  border-top: 1px solid var(--border);
 }
 
-.household-info {
-  box-sizing: border-box;
-  text-align: center;
-  padding: 0.6rem 1.25rem;
+td.household-info {
   background: var(--household-bg);
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
   border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
 }
 
-/* spans are just inline — comma is added via JS now */
-.household-info > span {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
+td.household-info > span {
+  margin-right: 0.5rem;
 }
 
-/* The ↗ link inside household-info */
-.household-info > a.row-link {
-  margin-left: 0.75rem;
-  flex-shrink: 0;
+/* Separate multiple household blocks within the same revision */
+tr.household-info-row:not(:first-child) td {
+  border-top: 3px solid var(--bg);
 }
 
 /* ─── Data Tables ───────────────────────────────────────── */
