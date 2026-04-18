@@ -25,7 +25,22 @@ const GENEALOGY_CONFIG = {
 
   columns: {
     revisions: {
-      columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии", "листы"],
+      // Column entries can be:
+      //   "column name"                         — string, width auto-detected by name
+      //   { col: "column name", width: "60px" } — string column with explicit width
+      //   { label: "...", columns: [...], ... }  — compound column (also supports width: "80px")
+      columns: [
+        "родство",
+        "имя",
+        "отчество",
+        "фамилия",
+        { col: "пометка",            width: "60px"  },
+        { col: "возраст на прошлую", width: "45px"  },
+        { col: "изменения",          width: "120px" },
+        { col: "возраст сейчас",     width: "45px"  },
+        { col: "комментарии",        width: "200px" },
+        { col: "листы",              width: "65px"  }
+      ],
       columnMap: { "имя": "імя" }
     },
     birthsUn: {

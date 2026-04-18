@@ -125,15 +125,33 @@ function isValidId(val) {
   return s !== '' && /^\d+$/.test(s) && parseInt(s, 10) > 0;
 }
 
-/** Get the display label of a column spec (string or object with .label). */
+/** Get the display label of a column spec. */
 function colLabel(colSpec) {
-  return typeof colSpec === 'string' ? colSpec : (colSpec.label ?? '');
+  if (typeof colSpec === 'string') return colSpec;
+  // { col: "name", width: "50px" } shorthand
+  if (colSpec.col) return colSpec.col;
+  return colSpec.label ?? '';
+}
+
+/** Get the sheet column key of a column spec (may differ from display label). */
+function colKey(colSpec) {
+  if (typeof colSpec === 'string') return colSpec;
+  if (colSpec.col) return colSpec.col;
+  return colSpec.label ?? '';
+}
+
+/** Get explicit width if specified, or null. */
+function colWidth(colSpec) {
+  if (typeof colSpec === 'object' && colSpec !== null) return colSpec.width ?? null;
+  return null;
 }
 
 // ── Display value formatting ──────────────────────────────────
 
 function formatDisplayValue(row, colSpec) {
   if (typeof colSpec === 'string') return row[colSpec] ?? '';
+  // { col: "name", width: "50px" } shorthand — treat like a plain string column
+  if (colSpec.col) return row[colSpec.col] ?? '';
 
   // Multi-column join (e.g. date from day + month)
   if (Array.isArray(colSpec.columns)) {
@@ -302,6 +320,8 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   if (isRevision)             addCol('36px');
 
   dataCols.forEach(col => {
+    const explicit = colWidth(col);
+    if (explicit) { addCol(explicit); return; }
     const name = colLabel(col).toLowerCase();
     if (/возраст|день|месяц|лист/.test(name)) addCol('40px');
     else if (/^№|пред/.test(name))            addCol('40px');
@@ -391,7 +411,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     dataCols.forEach(col => {
       const td = tr.insertCell();
       const val = formatDisplayValue(row, col);
-      const linkedId = links?.[colLabel(col)] ? normaliseId(row[links[colLabel(col)]]) : null;
+      const linkedId = links?.[colKey(col)] ? normaliseId(row[links[colKey(col)]]) : null;
       renderCellValue(td, val, (linkedId && isValidId(linkedId)) ? linkedId : null, currentSearchId);
     });
   });
