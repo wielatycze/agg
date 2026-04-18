@@ -119,6 +119,12 @@ function normaliseId(val) {
   return String(val ?? '').trim();
 }
 
+/** Returns true only if the value is a valid positive integer ID. */
+function isValidId(val) {
+  const s = normaliseId(val);
+  return s !== '' && /^\d+$/.test(s) && parseInt(s, 10) > 0;
+}
+
 /** Get the display label of a column spec (string or object with .label). */
 function colLabel(colSpec) {
   return typeof colSpec === 'string' ? colSpec : (colSpec.label ?? '');
@@ -159,7 +165,8 @@ function matchSource(source, allRows, targetId) {
 
   allRows.forEach((row, idx) => {
     for (const { column, role } of source.roles) {
-      if (normaliseId(row[column]) === targetStr) {
+      const cellVal = normaliseId(row[column]);
+      if (isValidId(cellVal) && cellVal === targetStr) {
         matchedSet.add(idx);
         matchedRoles.set(idx, role);
         break;
@@ -242,7 +249,7 @@ function renderCellValue(td, val, linkedId = null, currentSearchId = null) {
 
   if (!linkedId) return;
 
-  if (String(linkedId) === String(currentSearchId)) {
+  if (isValidId(linkedId) && String(linkedId) === String(currentSearchId)) {
     td.classList.add('cell-current-person');
     return;
   }
@@ -368,7 +375,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
       for (const { column } of source.roles) {
         const val = normaliseId(row[column])
           || normaliseId(row[Object.keys(row).find(k => k.trim() === column.trim()) ?? '']);
-        if (val) { personId = val; break; }
+        if (isValidId(val)) { personId = val; break; }
       }
       if (personId) {
         td.appendChild(makeElement('a', {
@@ -385,7 +392,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
       const td = tr.insertCell();
       const val = formatDisplayValue(row, col);
       const linkedId = links?.[colLabel(col)] ? normaliseId(row[links[colLabel(col)]]) : null;
-      renderCellValue(td, val, linkedId || null, currentSearchId);
+      renderCellValue(td, val, (linkedId && isValidId(linkedId)) ? linkedId : null, currentSearchId);
     });
   });
 
