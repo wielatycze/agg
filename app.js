@@ -584,6 +584,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') runSearch(parseInt(input.value, 10));
   });
 
+  // Intercept all internal ?id= link clicks — use in-page search to preserve the cache
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="?id="]');
+    if (!a) return;
+    e.preventDefault();
+    const id = parseInt(new URLSearchParams(a.getAttribute('href').slice(1)).get('id'), 10);
+    if (id > 0) {
+      input.value = id;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      runSearch(id);
+    }
+  });
+
   // Re-run search on browser back/forward
   window.addEventListener('popstate', () => {
     const id = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
