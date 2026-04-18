@@ -361,16 +361,23 @@ function renderCellValue(td, val, linkedId = null, currentSearchId = null) {
 
   if (linkedId) {
     if (String(linkedId) === String(currentSearchId)) {
-      // This is the person currently being viewed — mark the cell
       td.classList.add('cell-current-person');
     } else {
-      // Another person — add a small navigation button
+      // Wrap existing content + button in a flex div
+      const wrap = document.createElement('div');
+      wrap.className = 'cell-nav-wrap';
+      const textSpan = document.createElement('span');
+      textSpan.className = 'cell-text';
+      // Move all existing child nodes into textSpan
+      while (td.firstChild) textSpan.appendChild(td.firstChild);
+      wrap.appendChild(textSpan);
       const btn = document.createElement('a');
       btn.href = `?id=${linkedId}`;
       btn.className = 'cell-nav-btn';
       btn.title = `Go to person #${linkedId}`;
       btn.textContent = '→';
-      td.appendChild(btn);
+      wrap.appendChild(btn);
+      td.appendChild(wrap);
     }
   }
 }

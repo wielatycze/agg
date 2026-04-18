@@ -431,12 +431,18 @@ table.record-table td {
 table.record-table tbody tr:last-child td { border-bottom: none; }
 table.record-table tbody tr:hover { background: var(--surface2); }
 
-/* Nav button beside a linked person's name */
-td:has(> a.cell-nav-btn) {
+/* Nav button beside a linked person's name — wrapper inside td */
+.cell-nav-wrap {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.cell-nav-wrap .cell-text {
+  flex: 1;
+  min-width: 0;
 }
 
 a.cell-nav-btn {
