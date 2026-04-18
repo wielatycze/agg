@@ -247,7 +247,7 @@ function makeLinkIcon(url) {
   a.target = '_blank';
   a.rel = 'noopener noreferrer';
   a.className = 'row-link';
-  a.title = 'Open in Google Sheets';
+  a.title = 'Адкрыць у Google Sheets';
   a.textContent = '↗';
   return a;
 }
@@ -374,7 +374,7 @@ function renderCellValue(td, val, linkedId = null, currentSearchId = null) {
       const btn = document.createElement('a');
       btn.href = `?id=${linkedId}`;
       btn.className = 'cell-nav-btn';
-      btn.title = `Go to person #${linkedId}`;
+      btn.title = `Перайсці да асобы #${linkedId}`;
       btn.textContent = '→';
       wrap.appendChild(btn);
       td.appendChild(wrap);
@@ -430,7 +430,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   }
   if (showRole) {
     const th = document.createElement('th');
-    th.textContent = 'Role';
+    th.textContent = 'Роля';
     headerRow.appendChild(th);
   }
   // Extra header for internal person link column (revisions only)
@@ -484,7 +484,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
         const a = document.createElement('a');
         a.href = `?id=${personId}`;
         a.className = 'row-link person-link';
-        a.title = `Go to person #${personId}`;
+        a.title = `Перайсці да асобы #${personId}`;
         a.textContent = '#';
         td.appendChild(a);
       }
@@ -533,10 +533,10 @@ function renderSection(section, results, config, currentSearchId = null) {
   count.className = 'section-count';
 
   if (!hasAny) {
-    count.textContent = 'no records found';
+    count.textContent = 'запісаў не знойдзена';
   } else {
     const n = results.filter(r => r !== null).length;
-    count.textContent = `${n} source${n !== 1 ? 's' : ''} with records`;
+    count.textContent = `${n} крыніц(а) з запісамі`;
   }
 
   header.appendChild(title);
@@ -546,7 +546,7 @@ function renderSection(section, results, config, currentSearchId = null) {
   if (!hasAny) {
     const empty = document.createElement('p');
     empty.className = 'section-empty';
-    empty.textContent = 'No records found in this section.';
+    empty.textContent = 'Запісаў у гэтым раздзеле не знойдзена.';
     div.appendChild(empty);
     return div;
   }
@@ -600,14 +600,14 @@ function showError(msg) {
 
 async function runSearch(personId) {
   if (!personId || isNaN(personId) || personId <= 0) {
-    showError('Please enter a valid positive integer ID.');
+    showError('Калі ласка, увядзіце дадатны цэлы нумар.');
     return;
   }
 
   // Update URL without reloading the page
   history.pushState(null, '', `?id=${personId}`);
 
-  setLoading('Searching all sources…');
+  setLoading('Пошук ва ўсіх крыніцах…');
 
   const config = GENEALOGY_CONFIG;
   const resultsBody = document.getElementById('results-body');
@@ -632,7 +632,7 @@ async function runSearch(personId) {
 
   // Wait for all fetches in parallel
   const cachedCount = [...uniqueKeys].filter(k => SHEET_CACHE[k]).length;
-  setLoading(`Loading ${uniqueKeys.size} sources…`);
+  setLoading(`Загрузка ${uniqueKeys.size} крыніц…`);
   // Wait only for the current batch — already-resolved promises return instantly
   await Promise.all([...uniqueKeys].map(k => SHEET_CACHE[k]));
 
@@ -649,7 +649,7 @@ async function runSearch(personId) {
       const key = `${sheetId}::${gid}`;
       let allRows = await SHEET_CACHE[key];
       done++;
-      setLoading(`Matching… (${done} / ${totalSources})`);
+      setLoading(`Пошук… (${done} / ${totalSources})`);
 
       if (allRows.length === 0) { sectionResults.push(null); continue; }
 
@@ -691,15 +691,15 @@ async function runSearch(personId) {
   const statusEl = document.getElementById('cache-status');
   if (statusEl) {
     const n = Object.keys(SHEET_CACHE).length;
-    statusEl.innerHTML = `${n} source${n !== 1 ? 's' : ''} cached in memory — subsequent searches are instant. <a id="clear-cache">Clear cache</a>`;
+    statusEl.innerHTML = `${n} крыніц(а) захавана ў памяці — наступны пошук будзе імгненным. <a id="clear-cache">Ачысціць кэш</a>`;
     document.getElementById('clear-cache')?.addEventListener('click', () => {
       Object.keys(SHEET_CACHE).forEach(k => delete SHEET_CACHE[k]);
-      statusEl.textContent = 'Cache cleared — next search will re-fetch all sources.';
+      statusEl.textContent = 'Кэш ачышчаны — наступны пошук загрузіць усе крыніцы нанова.';
     });
   }
 
   if (totalFound === 0) {
-    resultsBody.innerHTML = `<p class="section-empty" style="padding:1rem 0">No records found for person ID <strong>${personId}</strong> in any source.</p>`;
+    resultsBody.innerHTML = `<p class="section-empty" style="padding:1rem 0">Запісаў для асобы <strong>${personId}</strong> не знойдзена ні ў адной крыніцы.</p>`;
   }
 }
 
