@@ -515,7 +515,45 @@ function renderSection(section, results, config, currentSearchId) {
   return div;
 }
 
-// ── UI helpers ────────────────────────────────────────────────
+/**
+ * Extract the person's full name from revision results.
+ * Uses the latest revision that has a matched row.
+ * Returns "Surname Name Patronymic", stripping /…/ wrappers from each part.
+ */
+function extractPersonName(allSectionResults, personId) {
+  const revisionResult = allSectionResults.find(({ section }) => section.id === 'revisions');
+  if (!revisionResult) return null;
+
+  // Find the last source (latest revision) that has a match
+  let matchedRow = null;
+  for (let i = revisionResult.sectionResults.length - 1; i >= 0; i--) {
+    const result = revisionResult.sectionResults[i];
+    if (!result) continue;
+    // Find the matched row for this person specifically
+    const rowIdx = [...result.matchedSet][0];
+    if (rowIdx !== undefined) { matchedRow = result.allRows[rowIdx]; break; }
+  }
+  if (!matchedRow) return null;
+
+  const stripSlashes = val => {
+    if (!val) return '';
+    const s = val.trim();
+    // If the whole value is /…/ — it's a placeholder, omit it
+    return /^\/.*\/$/.test(s) ? '' : s;
+  };
+
+  // Try both Russian and renamed (Belarusian via columnMap) key variants
+  const get = (...keys) => {
+    for (const k of keys) { const v = matchedRow[k]; if (v) return v; }
+    return '';
+  };
+
+  const surname    = stripSlashes(get('фамилия', 'фамілія'));
+  const name       = stripSlashes(get('имя', 'імя'));
+  const patronymic = stripSlashes(get('отчество', 'отчаство'));
+
+  return [surname, name, patronymic].filter(Boolean).join(' ') || null;
+}
 
 function setLoading(msg) {
   document.getElementById('loading-section').classList.remove('hidden');
@@ -614,6 +652,8 @@ async function runSearch(personId) {
   }
 
   document.getElementById('results-id').textContent = `#${personId}`;
+  const personName = extractPersonName(allSectionResults, personId);
+  document.getElementById('results-name').textContent = personName ?? '';
   document.getElementById('results').classList.remove('hidden');
 
   if (totalFound === 0) {
