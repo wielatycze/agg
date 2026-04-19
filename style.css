@@ -579,7 +579,54 @@ tr.household-gap td {
 #scroll-top:hover { transform: translateY(-2px); }
 #scroll-top:active { transform: translateY(0); }
 
-/* ─── Utilities ─────────────────────────────────────────── */
+/* ─── Abbreviated column headers with tap tooltip ───────── */
+th.th-abbr {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+
+th.th-abbr .th-abbr-text {
+  border-bottom: 1px dashed var(--text-faint);
+  white-space: nowrap;
+}
+
+th.th-abbr .th-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--surface);
+  font-size: 0.72rem;
+  font-weight: 400;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Arrow above tooltip */
+th.th-abbr .th-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-bottom-color: var(--text);
+}
+
+th.th-abbr.tooltip-open .th-tooltip { display: block; }
+
+/* On non-touch devices show on hover instead */
+@media (hover: hover) {
+  th.th-abbr:hover .th-tooltip { display: block; }
+}
 .hidden { display: none !important; }
 
 /* ─── Footer ────────────────────────────────────────────── */

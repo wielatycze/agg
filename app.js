@@ -146,6 +146,12 @@ function colWidth(colSpec) {
   return null;
 }
 
+/** Get abbreviation if specified, or null. */
+function colAbbr(colSpec) {
+  if (typeof colSpec === 'object' && colSpec !== null) return colSpec.abbr ?? null;
+  return null;
+}
+
 // ── Display value formatting ──────────────────────────────────
 
 function formatDisplayValue(row, colSpec) {
@@ -350,15 +356,25 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   }
 
   const headerRow = thead.insertRow();
-  const addTh = (text, cls) => {
-    const th = makeElement('th', { textContent: text });
+  const addTh = (text, cls, abbr = null) => {
+    const th = document.createElement('th');
     if (cls) th.className = cls;
+    if (abbr) {
+      th.className = (th.className ? th.className + ' ' : '') + 'th-abbr';
+      th.setAttribute('data-full', text);
+      const abbrSpan = makeElement('span', { className: 'th-abbr-text', textContent: abbr });
+      const tooltip  = makeElement('div',  { className: 'th-tooltip',   textContent: text });
+      th.appendChild(abbrSpan);
+      th.appendChild(tooltip);
+    } else {
+      th.textContent = text;
+    }
     headerRow.appendChild(th);
   };
   if (hasGid && !isRevision) addTh('', 'col-link');
   if (showRole)               addTh('Роля');
   if (isRevision)             addTh('', 'col-link');
-  dataCols.forEach(col => addTh(colLabel(col)));
+  dataCols.forEach(col => addTh(colLabel(col), null, colAbbr(col)));
 
   // ── Body ──
   const tbody = table.createTBody();
@@ -627,6 +643,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') runSearch(parseInt(input.value, 10));
+  });
+
+  // Tap to show abbreviated header tooltips (touch devices)
+  document.addEventListener('click', e => {
+    const th = e.target.closest('th.th-abbr');
+    // Close any open tooltip that isn't this one
+    document.querySelectorAll('th.th-abbr.tooltip-open').forEach(el => {
+      if (el !== th) el.classList.remove('tooltip-open');
+    });
+    if (th) th.classList.toggle('tooltip-open');
   });
 
   // Intercept all internal ?id= link clicks — use in-page search to preserve the cache

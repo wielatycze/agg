@@ -26,20 +26,21 @@ const GENEALOGY_CONFIG = {
   columns: {
     revisions: {
       // Column entries can be:
-      //   "column name"                         — string, width auto-detected by name
-      //   { col: "column name", width: "60px" } — string column with explicit width
-      //   { label: "...", columns: [...], ... }  — compound column (also supports width: "80px")
+      //   "column name"                                      — string, width auto-detected by name
+      //   { col: "column name", width: "60px" }             — explicit width
+      //   { col: "column name", width: "45px", abbr: "Узр." } — abbr shown on mobile, full name on tap
+      //   { label: "...", columns: [...], ... }              — compound column (also supports width, abbr)
       columns: [
         "родство",
         "имя",
         "отчество",
         "фамилия",
-        { col: "пометка",            width: "60px"  },
-        { col: "возраст на прошлую", width: "45px"  },
-        { col: "изменения",          width: "120px" },
-        { col: "возраст сейчас",     width: "45px"  },
-        { col: "комментарии",        width: "200px" },
-        { col: "листы",              width: "65px"  }
+        { col: "пометка",            width: "60px",  abbr: "Пом."   },
+        { col: "возраст на прошлую", width: "45px",  abbr: "Узр.↑"  },
+        { col: "изменения",          width: "120px", abbr: "Змены"  },
+        { col: "возраст сейчас",     width: "45px",  abbr: "Узр.↓"  },
+        { col: "комментарии",        width: "200px", abbr: "Кам."   },
+        { col: "листы",              width: "65px",  abbr: "Л."     }
       ],
       columnMap: { "имя": "імя" }
     },
