@@ -538,8 +538,8 @@ function extractPersonName(allSectionResults, personId) {
   const stripSlashes = val => {
     if (!val) return '';
     const s = val.trim();
-    // If the whole value is /…/ — it's a placeholder, omit it
-    return /^\/.*\/$/.test(s) ? '' : s;
+    // Remove surrounding /…/ but keep the content
+    return /^\/.*\/$/.test(s) ? s.slice(1, -1).trim() : s;
   };
 
   // Try both Russian and renamed (Belarusian via columnMap) key variants
@@ -548,9 +548,9 @@ function extractPersonName(allSectionResults, personId) {
     return '';
   };
 
-  const surname    = stripSlashes(get('фамилия', 'фамілія'));
+  const surname    = stripSlashes(get('фамилия', 'фамілія', 'фамiлiя'));
   const name       = stripSlashes(get('имя', 'імя'));
-  const patronymic = stripSlashes(get('отчество', 'отчаство'));
+  const patronymic = stripSlashes(get('отчество', 'отчаство', 'отчасьво'));
 
   return [surname, name, patronymic].filter(Boolean).join(' ') || null;
 }
