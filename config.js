@@ -118,7 +118,7 @@ const GENEALOGY_CONFIG = {
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
-          display_columns: ["родство", "имя", "отчество", "фамилия", "пометка", "возраст на прошлую", "изменения", "возраст сейчас", "комментарии"]
+          display_columns: "revisions"
         },
 
         {

@@ -603,12 +603,9 @@ th.th-abbr .th-abbr-text {
   white-space: nowrap;
 }
 
-th.th-abbr .th-tooltip {
-  display: none;
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
+/* Tooltip rendered as a fixed-position element via JS to escape table overflow */
+.th-tooltip-floating {
+  position: fixed;
   background: var(--text);
   color: var(--surface);
   font-size: 0.72rem;
@@ -616,14 +613,14 @@ th.th-abbr .th-tooltip {
   padding: 4px 8px;
   border-radius: var(--radius-xs);
   white-space: nowrap;
-  z-index: 100;
+  z-index: 1000;
   pointer-events: none;
+  font-family: var(--font);
   text-transform: none;
   letter-spacing: 0;
 }
 
-/* Arrow above tooltip */
-th.th-abbr .th-tooltip::before {
+.th-tooltip-floating::before {
   content: '';
   position: absolute;
   bottom: 100%;
@@ -631,13 +628,6 @@ th.th-abbr .th-tooltip::before {
   transform: translateX(-50%);
   border: 4px solid transparent;
   border-bottom-color: var(--text);
-}
-
-th.th-abbr.tooltip-open .th-tooltip { display: block; }
-
-/* On non-touch devices show on hover instead */
-@media (hover: hover) {
-  th.th-abbr:hover .th-tooltip { display: block; }
 }
 .hidden { display: none !important; }
 

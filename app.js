@@ -360,10 +360,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
     if (abbr) {
       th.className = (th.className ? th.className + ' ' : '') + 'th-abbr';
       th.setAttribute('data-full', text);
-      const abbrSpan = makeElement('span', { className: 'th-abbr-text', textContent: abbr });
-      const tooltip  = makeElement('div',  { className: 'th-tooltip',   textContent: text });
-      th.appendChild(abbrSpan);
-      th.appendChild(tooltip);
+      th.appendChild(makeElement('span', { className: 'th-abbr-text', textContent: abbr }));
     } else {
       th.textContent = text;
     }
@@ -662,15 +659,61 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') runSearch(parseInt(input.value, 10));
   });
 
-  // Tap to show abbreviated header tooltips (touch devices)
+  // Abbreviated header tooltips — rendered as a floating body element to escape table overflow
+  const floatingTooltip = document.createElement('div');
+  floatingTooltip.className = 'th-tooltip-floating';
+  floatingTooltip.style.display = 'none';
+  document.body.appendChild(floatingTooltip);
+
+  let tooltipTarget = null;
+
+  function showTooltip(th) {
+    tooltipTarget = th;
+    floatingTooltip.textContent = th.getAttribute('data-full') ?? '';
+    floatingTooltip.style.display = 'block';
+    positionTooltip(th);
+  }
+
+  function hideTooltip() {
+    tooltipTarget = null;
+    floatingTooltip.style.display = 'none';
+  }
+
+  function positionTooltip(th) {
+    const rect = th.getBoundingClientRect();
+    const tip  = floatingTooltip.getBoundingClientRect();
+    const left = rect.left + rect.width / 2 - tip.width / 2;
+    const top  = rect.bottom + 6;
+    floatingTooltip.style.left = `${Math.max(4, left)}px`;
+    floatingTooltip.style.top  = `${top}px`;
+  }
+
+  // Touch: tap to toggle
   document.addEventListener('click', e => {
     const th = e.target.closest('th.th-abbr');
-    // Close any open tooltip that isn't this one
-    document.querySelectorAll('th.th-abbr.tooltip-open').forEach(el => {
-      if (el !== th) el.classList.remove('tooltip-open');
-    });
-    if (th) th.classList.toggle('tooltip-open');
+    if (th) {
+      if (tooltipTarget === th) { hideTooltip(); }
+      else { showTooltip(th); }
+      return;
+    }
+    // Tap elsewhere closes tooltip
+    if (tooltipTarget) hideTooltip();
   });
+
+  // Mouse: hover
+  document.addEventListener('mouseover', e => {
+    const th = e.target.closest('th.th-abbr');
+    if (th) showTooltip(th);
+  });
+  document.addEventListener('mouseout', e => {
+    const th = e.target.closest('th.th-abbr');
+    if (th) hideTooltip();
+  });
+
+  // Reposition on scroll (table scrolls horizontally)
+  document.addEventListener('scroll', () => {
+    if (tooltipTarget) positionTooltip(tooltipTarget);
+  }, true);
 
   // Intercept all internal ?id= link clicks — use in-page search to preserve the cache
   document.addEventListener('click', e => {
