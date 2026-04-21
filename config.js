@@ -42,7 +42,8 @@ const GENEALOGY_CONFIG = {
         { col: "комментарии",        width: "200px", abbr: "Кам."   },
         { col: "листы",              width: "65px",  abbr: "Л."     }
       ],
-      columnMap: { "имя": "імя" }
+      columnMap: { "имя": "імя" },
+      links: { "імя": "#" }
     },
     birthsUn: {
       columns: [ "год",

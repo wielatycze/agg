@@ -311,8 +311,7 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
 
   const totalCols = dataCols.length
     + (hasGid && !isRevision ? 1 : 0)
-    + (showRole   ? 1 : 0)
-    + (isRevision ? 1 : 0);
+    + (showRole ? 1 : 0);
 
   const table = document.createElement('table');
   table.className = 'record-table';
@@ -323,7 +322,6 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
 
   if (hasGid && !isRevision) addCol('36px');
   if (showRole)               addCol('80px');
-  if (isRevision)             addCol('36px');
 
   dataCols.forEach(col => {
     const explicit = colWidth(col);
@@ -373,7 +371,6 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
   };
   if (hasGid && !isRevision) addTh('', 'col-link');
   if (showRole)               addTh('Роля');
-  if (isRevision)             addTh('', 'col-link');
   dataCols.forEach(col => addTh(colLabel(col), null, colAbbr(col)));
 
   // ── Body ──
@@ -399,26 +396,6 @@ function createPersonTable(source, allRows, displayIndices, matchedSet, matchedR
         td.appendChild(makeElement('span', {
           className: 'role-badge',
           textContent: matchedRoles.get(rowIdx) ?? '—',
-        }));
-      }
-    }
-
-    // Internal person link (revision only)
-    if (isRevision) {
-      const td = tr.insertCell();
-      td.className = 'col-link';
-      let personId = null;
-      for (const { column } of source.roles) {
-        const val = normaliseId(row[column])
-          || normaliseId(row[Object.keys(row).find(k => k.trim() === column.trim()) ?? '']);
-        if (isValidId(val)) { personId = val; break; }
-      }
-      if (personId) {
-        td.appendChild(makeElement('a', {
-          href: `?id=${personId}`,
-          className: 'row-link person-link',
-          title: `Перайсці да асобы #${personId}`,
-          textContent: '#',
         }));
       }
     }
