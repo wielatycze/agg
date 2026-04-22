@@ -1,23 +1,23 @@
 /* ─── Variables ─────────────────────────────────────────── */
 :root {
-  --bg:           #f0f2f8;           /* unchanged — grey background */
+  --bg:           #f0f2f8;
   --surface:      #ffffff;
-  --surface2:     #f7f5ee;           /* warm off-white, Dry Sage hint */
-  --surface3:     #ede9d8;           /* light Dry Sage — table headers */
-  --border:       #d4ceb0;           /* Dry Sage mid — borders */
-  --text:         #453c10;           /* Dark Khaki — main text */
-  --text-mid:     #706a4b;           /* Dusty Olive — secondary text */
-  --text-faint:   #a89d63;           /* Sand — faint/hint text */
-  --accent:       #706a4b;           /* Dusty Olive — buttons, links */
-  --accent-dark:  #453c10;           /* Dark Khaki — hover */
-  --accent-soft:  rgba(112,106,75,0.10);
-  --accent-soft2: rgba(112,106,75,0.22);
-  --matched:      rgba(168,157,99,0.20);   /* Sand tint — matched rows */
-  --matched-hov:  rgba(168,157,99,0.35);
-  --household-bg: #ede9d8;           /* light Dry Sage — household info bar */
-  --source-label: #706a4b;           /* Dusty Olive — source label bar */
-  --shadow-sm:    0 1px 4px rgba(69,60,16,0.08);
-  --shadow-md:    0 4px 16px rgba(69,60,16,0.10);
+  --surface2:     #f7f8fc;
+  --surface3:     #e2e6f3;
+  --border:       #e8eaf2;
+  --text:         #1a1d2e;
+  --text-mid:     #5a607a;
+  --text-faint:   #9ba3be;
+  --accent:       #4f6ef7;
+  --accent-dark:  #3a57e8;
+  --accent-soft:  rgba(79,110,247,0.08);
+  --accent-soft2: rgba(79,110,247,0.15);
+  --matched:      rgba(79,110,247,0.22);
+  --matched-hov:  rgba(79,110,247,0.30);
+  --household-bg: #eef1fd;
+  --source-label: #4f6ef7;
+  --shadow-sm:    0 1px 4px rgba(30,40,100,0.06);
+  --shadow-md:    0 4px 16px rgba(30,40,100,0.08);
   --radius:       12px;
   --radius-sm:    8px;
   --radius-xs:    6px;
@@ -157,11 +157,11 @@ button#search-btn {
   border-radius: var(--radius-sm);
   transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(112,106,75,0.25);
+  box-shadow: 0 2px 8px rgba(79,110,247,0.25);
 }
 button#search-btn:hover {
   background: var(--accent-dark);
-  box-shadow: 0 4px 14px rgba(112,106,75,0.35);
+  box-shadow: 0 4px 14px rgba(79,110,247,0.35);
 }
 button#search-btn:active { transform: translateY(1px); }
 
@@ -211,11 +211,11 @@ button#search-btn:active { transform: translateY(1px); }
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: #f5f3ec;
-  border: 1px solid #a89d63;
+  background: #fff5f5;
+  border: 1px solid #fecaca;
   border-radius: var(--radius-sm);
   padding: 1rem 1.25rem;
-  color: #453c10;
+  color: #dc2626;
   font-size: 0.88rem;
 }
 .error-icon { font-size: 1.1rem; }
@@ -538,7 +538,7 @@ a.row-link:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
-  box-shadow: 0 2px 6px rgba(112,106,75,0.3);
+  box-shadow: 0 2px 6px rgba(79,110,247,0.3);
 }
 
 /* Internal person page link — filled accent by default */
@@ -575,7 +575,7 @@ tr.household-gap td {
   border: none;
   font-size: 1.1rem;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(112,106,75,0.35);
+  box-shadow: 0 4px 14px rgba(79,110,247,0.35);
   display: flex;
   align-items: center;
   justify-content: center;
