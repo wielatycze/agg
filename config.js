@@ -20,7 +20,9 @@ const GENEALOGY_CONFIG = {
     birthUn:      { sheet: "churchRecords", gid: 572746856 },
     birthPr:      { sheet: "churchRecords", gid: 0 },
     marriageUn:   { sheet: "churchRecords", gid: 1045153146 },
-    marriageOrth: { sheet: "churchRecords", gid: 229265291 }
+    marriageOrth: { sheet: "churchRecords", gid: 229265291  },
+    deathUn:      { sheet: "churchRecords", gid: 418270131  },
+    deathOrth:    { sheet: "churchRecords", gid: 1482898957 }
   },
 
   columns: {
@@ -101,10 +103,35 @@ const GENEALOGY_CONFIG = {
     marriagesUn: {
       columns: ["_role_","год", "№", "1", "2", "3", "4", "5", "6", "7", "8"]
     },
-    marriagesOrth: {
+    marriageOrth: {
       columns: ["_role_", "№",
         { label: "дата шлюба", columns: ["dd", "mm"], join: ".", format: "date" }, "year",
         "m_pl", "m_name", "m_patr", "m_surn", "m_age", "f_pl", "f_patr", "f_surn", "f_age"]
+    },
+    deathsUn: {
+      columns: [
+        { label: "дата смерці", columns: ["dd", "mm"], join: ".", format: "date" },
+        "who",
+        "where",
+        "why",
+        { col: "age", width: "45px", abbr: "Узр." },
+        { col: "year", width: "45px" }
+      ]
+    },
+    deathsOrth: {
+      columns: [
+        { label: "дата смерці",    columns: ["dd", "mm"],    join: ".", format: "date" },
+        { label: "дата нараджэння", columns: ["dd_b", "mm_b"], join: ".", format: "date" },
+        { col: "yyyy", width: "50px" },
+        "pl",
+        "relation",
+        "who",
+        "name",
+        "patronymic",
+        "surname",
+        { col: "age",   width: "45px", abbr: "Узр." },
+        "cause"
+      ]
     }
   },
 
@@ -283,7 +310,24 @@ const GENEALOGY_CONFIG = {
       label: "Метрычныя кнігі — смерць",
       icon:  "✝",
       sources: [
-        // Add death record sources here when available
+        {
+          tab:              "deathUn",
+          label:            "Вяляцічы, уніацкая царква",
+          household_column: null,
+          roles: [
+            { column: "#", role: "Памерлы" }
+          ],
+          display_columns: "deathsUn"
+        },
+        {
+          tab:              "deathOrth",
+          label:            "Вяляцічы, праваслаўная царква",
+          household_column: null,
+          roles: [
+            { column: "#", role: "Памерлы" }
+          ],
+          display_columns: "deathsOrth"
+        }
       ]
     },
 
