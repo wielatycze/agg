@@ -25,11 +25,6 @@ const GENEALOGY_CONFIG = {
 
   columns: {
     revisions: {
-      // Column entries can be:
-      //   "column name"                                      — string, width auto-detected by name
-      //   { col: "column name", width: "60px" }             — explicit width
-      //   { col: "column name", width: "45px", abbr: "Узр." } — abbr shown on mobile, full name on tap
-      //   { label: "...", columns: [...], ... }              — compound column (also supports width, abbr)
       columns: [
         "родство",
         "имя",
@@ -41,6 +36,22 @@ const GENEALOGY_CONFIG = {
         { col: "возраст сейчас",     width: "45px",  abbr: "Узр.↓"  },
         { col: "комментарии",        width: "200px", abbr: "Кам."   },
         { col: "листы",              width: "65px",  abbr: "Л."     }
+      ],
+      columnMap: { "имя": "імя" },
+      links: { "імя": "#" }
+    },
+    revisions1811: {
+      // Same as revisions but without "листы"
+      columns: [
+        "родство",
+        "имя",
+        "отчество",
+        "фамилия",
+        { col: "пометка",            width: "60px",  abbr: "Пом."   },
+        { col: "возраст на прошлую", width: "45px",  abbr: "Узр.↑"  },
+        { col: "изменения",          width: "120px", abbr: "Змены"  },
+        { col: "возраст сейчас",     width: "45px",  abbr: "Узр.↓"  },
+        { col: "комментарии",        width: "200px", abbr: "Кам."   }
       ],
       columnMap: { "имя": "імя" },
       links: { "імя": "#" }
@@ -118,7 +129,7 @@ const GENEALOGY_CONFIG = {
             { column: "#", role: "Person" }
           ],
           household_columns: ["тип", "н.п.", { template: "хата №{№}", column: "№" }],
-          display_columns: "revisions"
+          display_columns: "revisions1811"
         },
 
         {
