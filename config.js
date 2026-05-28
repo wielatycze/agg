@@ -28,7 +28,7 @@ const GENEALOGY_CONFIG = {
   columns: {
     revisions: {
       columns: [
-        "родство",
+        { col: "родство", width: "130px" },
         "имя",
         "отчество",
         "фамилия",
