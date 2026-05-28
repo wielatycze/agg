@@ -350,7 +350,7 @@ const GENEALOGY_CONFIG = {
           display_columns: "birthsUn"
         },
         {
-          tab:              "birthsPr",
+          tab:              "birthPr",
           label:            "Вяляцічы, праваслаўная царква",
           household_column: null,
           roles: [
