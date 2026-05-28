@@ -81,14 +81,14 @@ const GENEALOGY_CONFIG = {
     birthsPr: {
       columns: [
         { col: "год", width: "40px" },
-        { label: "дата рождения", width: "40px", columns: ["день рождения", "месяц рождения"], join: ".", format: "date" },
-        { label: "дата крещения", width: "40px", columns: ["день крещения", "месяц крещения"], join: ".", format: "date" },
-        { col: "имя ребенка", width: "80px" },
-        { col: "имя отца", width: "80px" },
-        { col: "отчество отца", width: "80px" },
-        { col: "фамилия", width: "80px" },
-        { col: "имя матери", width: "80px" },
-        { col: "отчество матери", width: "80px" },
+        { label: "дата рождения", width: "45px", columns: ["день рождения", "месяц рождения"], join: ".", format: "date" },
+        { label: "дата крещения", width: "45px", columns: ["день крещения", "месяц крещения"], join: ".", format: "date" },
+        { col: "имя ребенка", width: "60px" },
+        { col: "имя отца", width: "60px" },
+        { col: "отчество отца", width: "60px" },
+        { col: "фамилия", width: "60px" },
+        { col: "имя матери", width: "60px" },
+        { col: "отчество матери", width: "60px" },
         "восприемник",
         "восприемница"
       ],
