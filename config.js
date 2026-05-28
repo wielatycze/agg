@@ -348,6 +348,16 @@ const GENEALOGY_CONFIG = {
             { column: "#крестный 2", role: "Сведка #2" }
           ],
           display_columns: "birthsUn"
+        },
+        {
+          tab:              "birthsPr",
+          label:            "Вяляцічы, праваслаўная царква",
+          household_column: null,
+          roles: [
+            { column: "#крестный 1", role: "Сведка #1" },
+            { column: "#крестный 2", role: "Сведка #2" }
+          ],
+          display_columns: "birthsPr"
         }
 
       ]
